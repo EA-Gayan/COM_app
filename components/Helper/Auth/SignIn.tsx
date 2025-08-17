@@ -11,9 +11,10 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-import { enqueueSnackbar } from "notistack";
+import { useSnackbar } from "notistack";
 
 const SignIn = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const [isSignIn, setIsSignIn] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -96,7 +97,7 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
-      const endpoint = isSignIn ? "/api/auth/signin" : "/api/auth/register";
+      const endpoint = isSignIn ? "/api/auth/signIn" : "/api/auth/register";
       const payload = isSignIn
         ? {
             email: formData.email,
@@ -117,16 +118,30 @@ const SignIn = () => {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error("Invalid response from server");
+      }
 
-      if (response.ok) {
-        enqueueSnackbar(data.message);
+      if (response.ok && data.success) {
+        // Show success message with variant
+        enqueueSnackbar(data.message, { variant: "success" });
 
         if (isSignIn) {
-          // Store user data for signed in user
-          localStorage.setItem("user", JSON.stringify(data.user));
+          // Store user data for signed in user - using the new response format
+          localStorage.setItem("user", JSON.stringify(data.data.user));
+
+          // Show welcome message
+          enqueueSnackbar(`Welcome back, ${data.data.user.userName}!`, {
+            variant: "success",
+          });
+
           // Redirect to dashboard
-          window.location.href = "/home";
+          setTimeout(() => {
+            window.location.href = "/home";
+          }, 1000); // Small delay to show the success message
         } else {
           // After successful registration, switch to sign in
           setIsSignIn(true);
@@ -141,11 +156,35 @@ const SignIn = () => {
           role: "",
         });
       } else {
-        alert(data.error);
+        // Handle error responses with new format
+        const errorMessage = data.message || data.error || "An error occurred";
+        enqueueSnackbar(errorMessage, { variant: "error" });
+
+        // Log error stack if available (for development)
+        if (data.errorStack) {
+          console.error("Backend Error Stack:", data.errorStack);
+        }
       }
     } catch (error) {
-      console.error("Request failed:", error);
-      alert("Something went wrong. Please try again.");
+      // Type-safe error handling - Option 1: Type assertion
+      const err = error as Error;
+
+      // Handle different types of errors
+      if (err.name === "TypeError" && err.message.includes("Failed to fetch")) {
+        enqueueSnackbar(
+          "Cannot connect to server. Please check if the server is running.",
+          { variant: "error" }
+        );
+      } else if (err.message === "Invalid response from server") {
+        enqueueSnackbar(
+          "Server returned an invalid response. Please try again.",
+          { variant: "error" }
+        );
+      } else {
+        enqueueSnackbar("Something went wrong. Please try again.", {
+          variant: "error",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -439,7 +478,7 @@ const SignIn = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>© 2025. All rights reserved.</p>
+          <p>© 2025 Sineth Studio. All rights reserved.</p>
         </div>
       </div>
     </div>
