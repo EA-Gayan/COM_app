@@ -29,11 +29,10 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
-      select: false, // Don't include password in queries by default
+      select: false,
     },
     role: {
       type: String,
-      required: true,
       default: "user",
     },
   },
@@ -42,25 +41,25 @@ const userSchema = new Schema(
   }
 );
 
-// Hash the password before saving
+// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-
   try {
-    const salt = await bcrypt.genSalt(12); // Increased salt rounds
-    this.password = await bcrypt.hash(this.password, salt);
+    // bcrypt automatically handles salt internally
+    const saltRounds = 10;
+    this.password = await bcrypt.hash(this.password, saltRounds);
     next();
   } catch (err) {
     next(err);
   }
 });
 
-// Instance method to compare passwords
+// Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Static method to find user by email with password
+// Static method to find by credentials
 userSchema.statics.findByCredentials = async function (email, password) {
   const user = await this.findOne({ email }).select("+password");
   if (!user) {
@@ -75,5 +74,4 @@ userSchema.statics.findByCredentials = async function (email, password) {
   return user;
 };
 
-// Prevent duplicate model compilation
 export default mongoose.models.User || mongoose.model("User", userSchema);
