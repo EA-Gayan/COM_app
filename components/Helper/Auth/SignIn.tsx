@@ -12,9 +12,12 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useSnackbar } from "notistack";
+import { useRouter } from "next/navigation";
 
 const SignIn = () => {
+  const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+
   const [isSignIn, setIsSignIn] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -140,8 +143,8 @@ const SignIn = () => {
 
           // Redirect to dashboard
           setTimeout(() => {
-            window.location.href = "/home";
-          }, 1000); // Small delay to show the success message
+            router.push("/home");
+          });
         } else {
           // After successful registration, switch to sign in
           setIsSignIn(true);
