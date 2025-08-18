@@ -15,4 +15,9 @@ export const Navlinks = [
     url: "#_",
     label: "Upcomig Events",
   },
+  {
+    id: 4,
+    url: "#_",
+    label: "Admin Dashborad",
+  },
 ];
