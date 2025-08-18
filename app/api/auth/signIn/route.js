@@ -1,6 +1,7 @@
 import connectionToDataBase from "../../../../lib/mongoose";
 import User from "../../../../models/userModel";
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export async function POST(request) {
   try {
@@ -8,7 +9,6 @@ export async function POST(request) {
     await connectionToDataBase();
 
     const { email, password } = await request.json();
-    console.log(email, password);
     // Validate input
     if (!email || !password) {
       return NextResponse.json(
@@ -44,11 +44,17 @@ export async function POST(request) {
           status: 401,
           message: "Invalid password!",
           success: false,
-          errorStack: `UnauthorizedError: Invalid password!\n    at login (signin/route.js:45:7)`,
         },
         { status: 401 }
       );
     }
+
+    //  Create JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     // Remove password from response (create clean user object)
     const userResponse = {
@@ -60,13 +66,22 @@ export async function POST(request) {
       updatedAt: user.updatedAt,
     };
 
-    return NextResponse.json({
+    // Set cookie
+    const response = NextResponse.json({
       success: true,
       message: "User Login successful!",
-      data: {
-        user: userResponse,
-      },
+      data: { user: userResponse },
     });
+
+    response.cookies.set("authToken", token, {
+      httpOnly: true, // prevent access from JS
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24, // 1 day
+    });
+
+    return response;
   } catch (error) {
     console.error("Sign in error:", error);
 

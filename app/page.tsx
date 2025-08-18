@@ -1,7 +1,7 @@
 import SignIn from "@/components/Helper/Auth/SignIn";
 import React from "react";
 
-const HomePage = () => {
+const Page = () => {
   return (
     <div>
       <SignIn />
@@ -9,4 +9,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default Page;
