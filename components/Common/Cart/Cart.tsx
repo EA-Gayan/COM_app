@@ -1,8 +1,14 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import { FaTrash } from "react-icons/fa";
 import { CartProps } from "./Cart.types";
+import PlaceOrderModal from "@/components/PlaceOrderModal/PlaceOrderModal";
 
 const Cart = (props: CartProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [modalData, setModalData] = useState({});
+  console.log(modalData);
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex justify-between items-center mb-4">
@@ -35,7 +41,7 @@ const Cart = (props: CartProps) => {
                 {item.quantity} x {item.name}
               </span>
             </div>
-            <div>£{(item.price * item.quantity).toFixed(2)}</div>
+            <div>Rs {(item.price * item.quantity).toFixed(2)}</div>
           </div>
         ))}
       </div>
@@ -43,17 +49,31 @@ const Cart = (props: CartProps) => {
       <div className="mt-4 border-t pt-4 text-sm">
         <div className="flex justify-between">
           <span>Discount</span>
-          <span>£{props.discount.toFixed(2)}</span>
+          <span>Rs {props.discount.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span>VAT</span>
-          <span>£{props.vat.toFixed(2)}</span>
+          <span>Rs {props.vat.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between text-green-600">
+          <span>Total Amount</span>
+          <span>Rs {props.total.toFixed(2)}</span>
         </div>
       </div>
 
-      <div className="mt-4 bg-green-600 text-white font-bold text-xl p-4 text-center rounded-lg cursor-pointer">
-        CHARGE £{props.total.toFixed(2)}
-      </div>
+      <button
+        className="mt-4 bg-green-600 text-white font-bold text-xl p-4 text-center rounded-lg cursor-pointer"
+        onClick={() => setIsOpen(true)}
+      >
+        Place order
+      </button>
+      {/* Modal (only shows if isOpen is true) */}
+      {isOpen && (
+        <PlaceOrderModal
+          onClose={() => setIsOpen(false)}
+          onSubmit={setModalData}
+        />
+      )}
     </div>
   );
 };

@@ -11,18 +11,6 @@ const products = [
   { id: 2, name: "Caesar Salad", price: 24.0 },
   { id: 3, name: "Burger", price: 10.5 },
   { id: 4, name: "Pizza", price: 15.0 },
-  { id: 5, name: "Apple Pie", price: 7.2 },
-  { id: 6, name: "Caesar Salad", price: 24.0 },
-  { id: 7, name: "Burger", price: 10.5 },
-  { id: 8, name: "Pizza", price: 15.0 },
-  { id: 9, name: "Apple Pie", price: 7.2 },
-  { id: 10, name: "Caesar Salad", price: 24.0 },
-  { id: 11, name: "Burger", price: 10.5 },
-  { id: 12, name: "Pizza", price: 15.0 },
-  { id: 13, name: "Apple Pie", price: 7.2 },
-  { id: 14, name: "Caesar Salad", price: 24.0 },
-  { id: 15, name: "Burger", price: 10.5 },
-  { id: 16, name: "Pizza", price: 15.0 },
 ];
 
 const Home = () => {
@@ -82,10 +70,10 @@ const Home = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="p-8 border border-black bg-white text-center text-lg font-semibold cursor-pointer hover:bg-gray-100"
+                className="p-8 border rounded-2xl border-black bg-white text-center text-lg font-semibold cursor-pointer hover:bg-gray-100"
                 onClick={() => handleAddToCart(product)}
               >
-                {product.name} <br /> £{product.price.toFixed(2)}
+                {product.name} <br /> Rs {product.price.toFixed(2)}
               </div>
             ))}
           </div>
