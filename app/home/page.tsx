@@ -1,20 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ResponsiveNav from "@/components/Helper/Navbar/ResponsiveNav";
 import Cart from "@/components/Common/Cart/Cart";
 import { CartItem } from "@/components/Common/Cart/Cart.types";
-
-// Example product list
-const products = [
-  { id: 1, name: "Apple Pie", price: 7.2 },
-  { id: 2, name: "Caesar Salad", price: 24.0 },
-  { id: 3, name: "Burger", price: 10.5 },
-  { id: 4, name: "Pizza", price: 15.0 },
-];
+import { prodctsProps, productPageProps } from "./homePage.types";
 
 const Home = () => {
+  const [products, setProduts] = useState<prodctsProps[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const getProducts = async () => {
+      const response = await fetch("/api/products", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      setProduts(data.data.products);
+    };
+
+    getProducts();
+  }, []);
 
   // Add product to cart or increase quantity
   const handleAddToCart = (product: {
@@ -69,11 +79,17 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <div
-                key={product.id}
+                key={product.productId}
                 className="p-8 border rounded-2xl border-black bg-white text-center text-lg font-semibold cursor-pointer hover:bg-gray-100"
-                onClick={() => handleAddToCart(product)}
+                onClick={() =>
+                  handleAddToCart({
+                    id: product.productId,
+                    name: product.name,
+                    price: product.sellingPrice,
+                  })
+                }
               >
-                {product.name} <br /> Rs {product.price.toFixed(2)}
+                {product.name} <br /> Rs {product.sellingPrice.toFixed(2)}
               </div>
             ))}
           </div>
