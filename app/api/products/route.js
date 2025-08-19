@@ -102,10 +102,11 @@ async function createProductHandler(request) {
       category,
       stockQty,
       availableQty,
+      sName,
     } = body;
 
     // Validate required fields
-    if (!name || !perchasePrice || !sellingPrice || !category) {
+    if (!name || !perchasePrice || !sellingPrice || !category || !sName) {
       return NextResponse.json(
         {
           success: false,
@@ -120,13 +121,15 @@ async function createProductHandler(request) {
     const existingProduct = await Product.findOne({
       name: name.trim(),
       category: category.trim(),
+      sName: sName.trim(),
     });
 
     if (existingProduct) {
       return NextResponse.json(
         {
           success: false,
-          message: "A product with the same name and category already exists",
+          message:
+            "A product with the same name,short name and category already exists",
         },
         { status: 400 }
       );

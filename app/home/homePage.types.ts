@@ -7,6 +7,7 @@ export interface prodctsProps {
   category: string;
   stockQty: number;
   availableQty: number;
+  sName: string;
 }
 
 export interface paginationProps {
