@@ -12,8 +12,8 @@ const Counter =
 const orderSchema = new mongoose.Schema(
   {
     customerDetails: {
-      name: { type: String, trim: true },
-      telNo: { type: String, trim: true },
+      name: { type: String },
+      telNo: { type: String },
     },
     orderId: {
       type: String,
@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema(
     },
     items: [
       {
-        product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        productId: { type: Number, required: true },
         name: { type: String, required: true },
         pricePerQuantity: { type: Number, required: true },
         quantity: { type: Number, required: true },

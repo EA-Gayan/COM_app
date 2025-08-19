@@ -28,15 +28,17 @@ const Home = () => {
 
   // Add product to cart or increase quantity
   const handleAddToCart = (product: {
-    id: number;
+    productId: number;
     name: string;
     price: number;
   }) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find(
+        (item) => item.productId === product.productId
+      );
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          item.productId === product.productId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
@@ -48,7 +50,7 @@ const Home = () => {
 
   // Remove single item from cart
   const handleRemoveItem = (id: number) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    setCart((prev) => prev.filter((item) => item.productId !== id));
   };
 
   // Clear all items from cart
@@ -83,7 +85,7 @@ const Home = () => {
                 className="p-8 border rounded-2xl border-black bg-white text-center text-lg font-semibold cursor-pointer hover:bg-gray-100"
                 onClick={() =>
                   handleAddToCart({
-                    id: product.productId,
+                    productId: product.productId,
                     name: product.name,
                     price: product.sellingPrice,
                   })
