@@ -34,6 +34,8 @@ export const config = {
   matcher: [
     "/home/:path*",
     "/orders/:path*",
+    "/products/:path*",
     "/api/products/:path*", // Add this to include product API routes
+    "/api/orders/:path*", // Add this to include product API routes
   ],
 };

@@ -22,7 +22,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
             onChange={(e) => setName(e.target.value)}
           />
           <input
-            type="tel"
+            type="text"
             placeholder="Telephone Number"
             value={telNo}
             className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -42,8 +42,9 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
 
           <button
             onClick={() => {
-              props.onSubmit({ name, tel: telNo });
+              props.onSubmit({ name, telNo: telNo });
               props.onClose();
+              props.onCompleteOrder(true);
             }}
             className="px-4 py-2 bg-blue-800 text-white font-medium rounded-md hover:bg-blue-900 transition w-full sm:w-auto"
           >

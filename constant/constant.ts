@@ -1,13 +1,13 @@
 export const Navlinks = [
   {
     id: 1,
-    url: "#_",
+    url: "orders",
     label: "passed Oders",
   },
 
   {
     id: 2,
-    url: "#_",
+    url: "/products",
     label: "Products",
   },
   {

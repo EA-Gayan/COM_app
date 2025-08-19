@@ -66,14 +66,6 @@ async function createOrderHandler(request) {
     const body = await request.json();
     const { customerDetails, items, bills, orderStatus } = body;
 
-    //  Validate required fields
-    if (!customerDetails?.name || !customerDetails?.telNo) {
-      return NextResponse.json(
-        { success: false, message: "Customer name and telephone are required" },
-        { status: 400 }
-      );
-    }
-
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { success: false, message: "At least one order item is required" },
@@ -91,8 +83,8 @@ async function createOrderHandler(request) {
     //  Build order object
     const newOrder = new Order({
       customerDetails: {
-        name: customerDetails.name.trim(),
-        telNo: customerDetails.telNo.trim(),
+        name: customerDetails.name,
+        telNo: customerDetails.telNo,
       },
       orderStatus: orderStatus || 0,
       bills: {
@@ -101,7 +93,7 @@ async function createOrderHandler(request) {
         discount: bills.discount || 0,
       },
       items: items.map((item) => ({
-        product: item.product,
+        productId: item.productId,
         name: item.name,
         pricePerQuantity: item.pricePerQuantity,
         quantity: item.quantity,
@@ -109,13 +101,13 @@ async function createOrderHandler(request) {
       })),
     });
 
-    const savedOrder = await newOrder.save();
+    await newOrder.save();
 
     return NextResponse.json(
       {
         success: true,
         message: "Order created successfully",
-        data: savedOrder,
+        data: "Order created successfully",
       },
       { status: 201 }
     );
