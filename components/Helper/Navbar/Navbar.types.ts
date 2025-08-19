@@ -1,5 +1,5 @@
 export interface NavProps {
-  openNav?: () => void;
-  showNav?: boolean;
-  closeNav?: () => void;
+  showSearch: boolean;
+  searchValue: (value: string) => void;
+  pageType: (value: string) => void;
 }

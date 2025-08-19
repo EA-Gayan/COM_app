@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import ResponsiveNav from "@/components/Helper/Navbar/ResponsiveNav";
-import ProductCard from "@/components/ProductCard/ProductCard";
-import { Pagination, Product } from "./productsPage.types";
 import Spinner from "@/components/Common/Spinner/Spinner";
+import Nav from "@/components/Helper/Navbar/Nav";
+import ProductCard from "@/components/ProductCard/ProductCard";
+import { useEffect, useState } from "react";
+import { Pagination, Product } from "./productsPage.types";
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [pageName, setPageName] = useState("");
 
   // Page state
   const [page, setPage] = useState(1);
@@ -52,7 +54,11 @@ const ProductsPage = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
-        <ResponsiveNav />
+        <Nav
+          showSearch={true}
+          searchValue={setSearchText}
+          pageType={setPageName}
+        />
       </div>
 
       {/* Products Area */}
