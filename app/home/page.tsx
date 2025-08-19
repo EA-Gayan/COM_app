@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ResponsiveNav from "@/components/Helper/Navbar/ResponsiveNav";
 import Cart from "@/components/Common/Cart/Cart";
 import { CartItem } from "@/components/Common/Cart/Cart.types";
 import { prodctsProps, productPageProps } from "./homePage.types";
+import Nav from "@/components/Helper/Navbar/Nav";
 
 const Home = () => {
   const [products, setProducts] = useState<prodctsProps[]>([]);
@@ -13,7 +13,8 @@ const Home = () => {
   // Page state
   const [page] = useState(1);
   const [limit] = useState(10);
-  const [search] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [pageName, setPageName] = useState("");
 
   useEffect(() => {
     const getProducts = async () => {
@@ -24,7 +25,7 @@ const Home = () => {
           body: JSON.stringify({
             page,
             limit,
-            search,
+            searchText,
           }),
         });
 
@@ -90,7 +91,11 @@ const Home = () => {
     <div className="flex flex-col h-screen">
       {/* Top Navbar */}
       <div className="sticky top-0 z-10">
-        <ResponsiveNav />
+        <Nav
+          showSearch={true}
+          searchValue={setSearchText}
+          pageType={setPageName}
+        />
       </div>
 
       {/* Content Area */}

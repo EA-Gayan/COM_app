@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import ResponsiveNav from "@/components/Helper/Navbar/ResponsiveNav";
-import { OrderProps, Pagination } from "./orderPage.types";
 import { StatusEnum } from "@/components/Common/enums/common_enums";
 import Spinner from "@/components/Common/Spinner/Spinner";
+import Nav from "@/components/Helper/Navbar/Nav";
+import { useEffect, useState } from "react";
+import { OrderProps, Pagination } from "./orderPage.types";
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState<OrderProps[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [pageName, setPageName] = useState("");
 
   // Page state
   const [page, setPage] = useState(1);
@@ -65,7 +67,11 @@ const OrdersPage = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
-        <ResponsiveNav />
+        <Nav
+          showSearch={true}
+          searchValue={setSearchText}
+          pageType={setPageName}
+        />
       </div>
 
       {/* Orders Area */}
