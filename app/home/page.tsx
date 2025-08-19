@@ -7,20 +7,39 @@ import { CartItem } from "@/components/Common/Cart/Cart.types";
 import { prodctsProps, productPageProps } from "./homePage.types";
 
 const Home = () => {
-  const [products, setProduts] = useState<prodctsProps[]>([]);
+  const [products, setProducts] = useState<prodctsProps[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Page state
+  const [page] = useState(1);
+  const [limit] = useState(10);
+  const [search] = useState("");
 
   useEffect(() => {
     const getProducts = async () => {
-      const response = await fetch("/api/products", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      try {
+        const response = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page,
+            limit,
+            search,
+          }),
+        });
 
-      const data = await response.json();
-      setProduts(data.data.products);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setProducts(result.data.products);
+        } else {
+          console.error("Failed to fetch products:", result.message);
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts([]);
+      }
     };
 
     getProducts();

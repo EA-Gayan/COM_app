@@ -111,6 +111,7 @@ async function createProductHandler(request) {
       category: category.trim(),
       stockQty: stockQty || 0,
       availableQty: availableQty || 0,
+      sName: sName.trim(),
     });
 
     const savedProduct = await newProduct.save();
