@@ -13,7 +13,7 @@ export const Navlinks = [
   {
     id: 3,
     url: "#_",
-    label: "Upcomig Events",
+    label: "Upcomigs",
   },
   {
     id: 4,
