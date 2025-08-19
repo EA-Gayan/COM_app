@@ -62,7 +62,7 @@ const Cart = (props: CartProps) => {
       </div>
 
       <button
-        className="mt-4 bg-green-600 text-white font-bold text-xl p-4 text-center rounded-lg cursor-pointer"
+        className="mt-4 bg-green-800 text-white font-bold text-xl p-4 text-center rounded-lg cursor-pointer"
         onClick={() => setIsOpen(true)}
       >
         Place order

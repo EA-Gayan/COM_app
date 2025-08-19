@@ -34,7 +34,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
         <div className="flex justify-between mt-6 space-x-3">
           <button
             onClick={props.onClose}
-            className="flex items-center justify-center px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 transition w-full sm:w-auto"
+            className="flex items-center justify-center px-4 py-2 bg-green-800 text-white font-medium rounded-md hover:bg-green-900 transition w-full sm:w-auto"
           >
             <FaWhatsapp className="mr-2 text-xl" />
             WhatsApp
@@ -45,7 +45,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
               props.onSubmit({ name, tel: telNo });
               props.onClose();
             }}
-            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition w-full sm:w-auto"
+            className="px-4 py-2 bg-blue-800 text-white font-medium rounded-md hover:bg-blue-900 transition w-full sm:w-auto"
           >
             Complete Order
           </button>
