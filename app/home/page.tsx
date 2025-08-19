@@ -11,11 +11,10 @@ const Home = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   // Page state
-  const [page] = useState(1);
-  const [limit] = useState(10);
   const [searchText, setSearchText] = useState("");
   const [pageName, setPageName] = useState("");
 
+  console.log(searchText);
   useEffect(() => {
     const getProducts = async () => {
       try {
@@ -23,8 +22,8 @@ const Home = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            page,
-            limit,
+            page: 1,
+            limit: 10,
             searchText,
           }),
         });
@@ -44,7 +43,7 @@ const Home = () => {
     };
 
     getProducts();
-  }, []);
+  }, [searchText]);
 
   // Add product to cart or increase quantity
   const handleAddToCart = (product: {
@@ -87,13 +86,14 @@ const Home = () => {
     vat -
     discount;
 
+  console.log(searchText);
   return (
     <div className="flex flex-col h-screen">
       {/* Top Navbar */}
       <div className="sticky top-0 z-10">
         <Nav
           showSearch={true}
-          searchValue={setSearchText}
+          onSearchChange={(val) => setSearchText(val)}
           pageType={setPageName}
         />
       </div>

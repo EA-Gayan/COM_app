@@ -1,5 +1,5 @@
 export interface NavProps {
   showSearch: boolean;
-  searchValue: (value: string) => void;
+  onSearchChange?: (value: string) => void;
   pageType: (value: string) => void;
 }

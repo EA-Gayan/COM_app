@@ -15,13 +15,16 @@ async function getProductsHandler(request) {
     const body = await request.json();
 
     // Optional values
-    const search = body.search?.trim();
+    const search = body.searchText?.trim();
     const page = body.page ? Number(body.page) : undefined;
     const limit = body.limit ? Number(body.limit) : undefined;
 
     const filter = {};
     if (search) {
-      filter.name = { $regex: search, $options: "i" }; // case-insensitive search
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } }, // search in name
+        { sName: { $regex: search, $options: "i" } }, // search in short name field
+      ];
     }
 
     let query = Product.find(filter).lean();

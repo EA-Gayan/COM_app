@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { SearchBarProps } from "./SearchBar.types";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 const SearchBar: React.FC<SearchBarProps> = ({
   isShow,
@@ -24,18 +24,34 @@ const SearchBar: React.FC<SearchBarProps> = ({
     onSearch?.(value ?? internalValue);
   };
 
+  const handleClear = () => {
+    setInternalValue("");
+    onChange?.(""); // notify parent about clearing
+  };
+
+  const currentValue = value ?? internalValue;
+
   return (
     <div>
       <div className="relative w-96">
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+
         <input
           type="text"
-          className="w-full pl-10 pr-3 py-2 border rounded-2xl focus:ring-2 focus:ring-blue-950 outline-none bg-white"
+          className="w-full pl-10 pr-10 py-2 border rounded-2xl focus:ring-2 focus:ring-blue-950 outline-none bg-white"
           placeholder={placeholder}
-          value={value ?? internalValue}
+          value={currentValue}
           onChange={handleChange}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
+
+        {/* X icon (only when input has text) */}
+        {currentValue && (
+          <X
+            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600"
+            onClick={handleClear}
+          />
+        )}
       </div>
     </div>
   );

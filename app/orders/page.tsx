@@ -31,6 +31,7 @@ const OrdersPage = () => {
         body: JSON.stringify({
           page,
           limit,
+          searchText,
         }),
       });
 
@@ -49,7 +50,7 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page]);
+  }, [page, searchText]);
 
   const getStatusLabel = (status: number) => {
     switch (status) {
@@ -69,7 +70,7 @@ const OrdersPage = () => {
       <div className="sticky top-0 z-10">
         <Nav
           showSearch={true}
-          searchValue={setSearchText}
+          onSearchChange={(val) => setSearchText(val)}
           pageType={setPageName}
         />
       </div>

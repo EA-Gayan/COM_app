@@ -12,17 +12,17 @@ async function getOrdersHandler(request) {
     await connectionToDataBase();
 
     // read JSON body directly
-    const { page = 1, limit = 10, search } = await request.json();
+    const { page = 1, limit = 10, searchText } = await request.json();
 
     const skip = (page - 1) * limit;
 
     // Build filter
     const filter = {};
 
-    if (search) {
+    if (searchText) {
       filter.$or = [
-        { orderId: { $regex: search, $options: "i" } },
-        { "customer.name": { $regex: search, $options: "i" } },
+        { orderId: { $regex: searchText, $options: "i" } },
+        { "customer.name": { $regex: searchText, $options: "i" } },
       ];
     }
 
