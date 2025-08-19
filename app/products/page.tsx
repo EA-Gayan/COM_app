@@ -31,6 +31,7 @@ const ProductsPage = () => {
         body: JSON.stringify({
           page,
           limit,
+          searchText,
         }),
       });
 
@@ -49,14 +50,14 @@ const ProductsPage = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [page]);
+  }, [page, searchText]);
 
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
         <Nav
           showSearch={true}
-          searchValue={setSearchText}
+          onSearchChange={(val) => setSearchText(val)}
           pageType={setPageName}
         />
       </div>

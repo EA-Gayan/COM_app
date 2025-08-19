@@ -32,7 +32,15 @@ const Nav = (types: NavProps) => {
           <div className="hidden lg:flex items-center space-x-10">
             <SearchBar
               isShow={true}
-              onSearch={(value) => setSearchValue(value)}
+              value={searchValue}
+              onChange={(val) => {
+                setSearchValue(val); // internal state
+                types.onSearchChange?.(val); // notify parent
+              }}
+              onSearch={(val) => {
+                setSearchValue(val);
+                types.onSearchChange?.(val);
+              }}
             />
           </div>
         )}
