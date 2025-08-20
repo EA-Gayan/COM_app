@@ -7,4 +7,5 @@ export interface PlaceOrderModalProps {
   onClose: () => void;
   onSubmit: (data: placeOrderOnSubmitData) => void;
   onCompleteOrder: (click: boolean) => void;
+  onWhatsappOrder: (click: boolean) => void;
 }

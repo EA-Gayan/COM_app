@@ -13,7 +13,7 @@ async function createOrderHandler(request) {
     await connectionToDataBase();
 
     const body = await request.json();
-    const { customerDetails, items, bills, orderStatus } = body;
+    const { customerDetails, items, bills, orderStatus, isWhatsapp } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
