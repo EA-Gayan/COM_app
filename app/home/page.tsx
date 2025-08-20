@@ -14,7 +14,6 @@ const Home = () => {
   const [searchText, setSearchText] = useState("");
   const [pageName, setPageName] = useState("");
 
-  console.log(searchText);
   useEffect(() => {
     const getProducts = async () => {
       try {
@@ -45,7 +44,7 @@ const Home = () => {
     getProducts();
   }, [searchText]);
 
-  // Add product to cart or increase quantity
+  // Add product to cart or increase quantity (respecting stock)
   const handleAddToCart = (product: {
     productId: number;
     name: string;
@@ -56,14 +55,28 @@ const Home = () => {
       const existing = prev.find(
         (item) => item.productId === product.productId
       );
+
+      // Find product stock
+      const productInList = products.find(
+        (p) => p.productId === product.productId
+      );
+      const stockQty = productInList?.stockQty ?? 0;
+
       if (existing) {
-        return prev.map((item) =>
-          item.productId === product.productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+        if (existing.quantity < stockQty) {
+          return prev.map((item) =>
+            item.productId === product.productId
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          return prev; // do nothing if stock reached
+        }
       } else {
-        return [...prev, { ...product, quantity: 1 }];
+        if (stockQty > 0) {
+          return [...prev, { ...product, quantity: 1 }];
+        }
+        return prev;
       }
     });
   };
@@ -87,7 +100,6 @@ const Home = () => {
     vat -
     discount;
 
-  console.log(searchText);
   return (
     <div className="flex flex-col h-screen">
       {/* Top Navbar */}
@@ -104,22 +116,42 @@ const Home = () => {
         {/* Left Side - Products */}
         <div className="flex-1 h-full overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <div
-                key={product.productId}
-                className="p-8 border rounded-2xl border-black bg-white text-center text-lg font-semibold cursor-pointer hover:bg-gray-100"
-                onClick={() =>
-                  handleAddToCart({
-                    productId: product.productId,
-                    name: product.name,
-                    price: product.sellingPrice,
-                    _id: product._id,
-                  })
-                }
-              >
-                {product.name} <br /> Rs {product.sellingPrice.toFixed(2)}
-              </div>
-            ))}
+            {products.map((product) => {
+              const cartItem = cart.find(
+                (item) => item.productId === product.productId
+              );
+              const currentQty = cartItem?.quantity ?? 0;
+              const isOutOfStock = currentQty >= product.stockQty;
+
+              return (
+                <div
+                  key={product.productId}
+                  className={`p-8 border rounded-2xl border-black bg-white text-center text-lg font-semibold ${
+                    isOutOfStock
+                      ? "cursor-not-allowed bg-gray-200 opacity-50"
+                      : "cursor-pointer hover:bg-gray-100"
+                  }`}
+                  onClick={() => {
+                    if (!isOutOfStock) {
+                      handleAddToCart({
+                        productId: product.productId,
+                        name: product.name,
+                        price: product.sellingPrice,
+                        _id: product._id,
+                      });
+                    }
+                  }}
+                >
+                  {product.name} <br /> Rs {product.sellingPrice.toFixed(2)}
+                  <br />
+                  <span className="text-sm text-red-600">
+                    {isOutOfStock
+                      ? "Out of Stock"
+                      : `Remaining: ${product.stockQty - currentQty}`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
