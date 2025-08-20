@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import Nav from "@/components/Helper/Navbar/Nav";
-import AddEventModal from "@/components/Common/AddEventModal/AddEventModal";
 import { EventProps } from "./upcomingsPage.types";
+import AddEventModal from "@/components/AddEventModal/AddEventModal";
+import Spinner from "@/components/Common/Spinner/Spinner";
 
 const UpcomingsPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -17,48 +18,48 @@ const UpcomingsPage = () => {
   const [pageName, setPageName] = useState("");
 
   // Sample events data
-  const [events, setEvents] = useState<EventProps[]>([
-    {
-      id: 1,
-      title: "Team Standup",
-      start: new Date(2025, 7, 25, 10, 0), // August 25, 2025
-      end: new Date(2025, 7, 25, 11, 0),
-      description: "Daily team sync meeting",
-      type: "meeting",
-    },
-    {
-      id: 2,
-      title: "Project Launch",
-      start: new Date(2025, 7, 28),
-      end: new Date(2025, 7, 28),
-      description: "Submit final project deliverables",
-      type: "deadline",
-    },
-    {
-      id: 3,
-      title: "Client Demo",
-      start: new Date(2025, 7, 30, 14, 0),
-      end: new Date(2025, 7, 30, 15, 30),
-      description: "Product demo presentation",
-      type: "call",
-    },
-    {
-      id: 4,
-      title: "Workshop",
-      start: new Date(2025, 7, 22, 9, 0),
-      end: new Date(2025, 7, 22, 17, 0),
-      description: "Design thinking workshop",
-      type: "event",
-    },
-  ]);
+  const [events, setEvents] = useState<EventProps[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleAddEvent = (newEvent: Omit<EventProps, "id">) => {
-    setEvents([...events, { ...newEvent, id: Date.now() }]);
-    setShowAddModal(false);
+  useEffect(() => {
+    const getEvents = async () => {
+      setLoading(true); // start spinner before API call
+      try {
+        const response = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentDate: currentDate,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setEvents(result.data.events);
+        } else {
+          console.error("Failed to fetch events:", result.message);
+          setEvents([]);
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setEvents([]);
+      } finally {
+        setLoading(false); // stop spinner after API call
+      }
+    };
+
+    getEvents();
+  }, [currentDate]);
+
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // normalize to midnight
+    return date < today;
   };
 
   const handleDateClick = (date: Date) => {
-    setSelectedDate(date);
+    if (isPastDate(date)) return;
     setShowAddModal(true);
   };
 
@@ -96,7 +97,7 @@ const UpcomingsPage = () => {
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => {
-      const eventDate = new Date(event.start);
+      const eventDate = new Date(event.startDate);
       return (
         eventDate.getDate() === date.getDate() &&
         eventDate.getMonth() === date.getMonth() &&
@@ -124,14 +125,12 @@ const UpcomingsPage = () => {
 
   const getEventTypeStyle = (type: string) => {
     switch (type) {
-      case "meeting":
+      case "Wedding":
         return "bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-200";
-      case "deadline":
+      case "preShoot":
         return "bg-gradient-to-r from-red-500 to-red-600 shadow-red-200";
-      case "call":
+      case "Live Event":
         return "bg-gradient-to-r from-green-500 to-green-600 shadow-green-200";
-      case "event":
-        return "bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-200";
       default:
         return "bg-gradient-to-r from-gray-500 to-gray-600 shadow-gray-200";
     }
@@ -177,97 +176,111 @@ const UpcomingsPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Calendar Container */}
-      <div className="p-8 -mt-8">
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden h-full">
-          {/* Days Header */}
-          <div className="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            {dayNames.map((day) => (
-              <div
-                key={day}
-                className="p-4 text-center font-bold text-gray-700 text-sm uppercase tracking-wide"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7">
-            {getCalendarDays().map((day, index) => {
-              const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-              const isToday =
-                day.getDate() === new Date().getDate() &&
-                day.getMonth() === new Date().getMonth() &&
-                day.getFullYear() === new Date().getFullYear();
-              const dayEvents = getEventsForDate(day);
-              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-
-              return (
-                <div
-                  key={index}
-                  className={`border-r border-b border-gray-200 p-3 min-h-[70px] cursor-pointer transition-all duration-200 hover:bg-blue-50/50 relative group ${
-                    !isCurrentMonth ? "bg-gray-50/50 text-gray-400" : ""
-                  } ${isWeekend ? "bg-blue-50/30" : ""}`}
-                  onClick={() => handleDateClick(day)}
-                  onMouseEnter={() => setHoveredDate(day)}
-                  onMouseLeave={() => setHoveredDate(null)}
-                >
-                  {/* Date Number */}
+      {loading ? (
+        <Spinner />
+      ) : (
+        <>
+          {/* Calendar Container */}
+          <div className="p-8 -mt-8">
+            <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 overflow-hidden h-full">
+              {/* Days Header */}
+              <div className="grid grid-cols-7 bg-gray-100 border-b border-gray-400">
+                {dayNames.map((day) => (
                   <div
-                    className={`text-sm font-bold mb-2 flex items-center justify-between ${
-                      isToday
-                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
-                        : ""
-                    }`}
+                    key={day}
+                    className="p-4 text-center font-bold text-gray-700 text-sm uppercase tracking-wide"
                   >
-                    <span className={isToday ? "" : ""}>{day.getDate()}</span>
-                    {dayEvents.length > 0 && !isToday && (
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    )}
+                    {day}
                   </div>
+                ))}
+              </div>
 
-                  {/* Events */}
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7">
+                {getCalendarDays().map((day, index) => {
+                  const isCurrentMonth =
+                    day.getMonth() === currentDate.getMonth();
+                  const isToday =
+                    day.getDate() === new Date().getDate() &&
+                    day.getMonth() === new Date().getMonth() &&
+                    day.getFullYear() === new Date().getFullYear();
+                  const dayEvents = getEventsForDate(day);
+                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                  const isDisabled = isPastDate(day);
+
+                  return (
+                    <div
+                      key={index}
+                      className={`border-r border-b border-gray-200 p-3 min-h-[70px] transition-all duration-200 relative group
+                        ${!isCurrentMonth ? "bg-gray-50/50 text-gray-400" : ""}
+                        ${isWeekend ? "bg-blue-50/30" : ""}
+                        ${
+                          isDisabled
+                            ? "text-gray-300 cursor-not-allowed bg-gray-100"
+                            : "cursor-pointer hover:bg-blue-50/50"
+                        }
+                      `}
+                      onClick={() => !isDisabled && handleDateClick(day)}
+                      onMouseEnter={() => !isDisabled && setHoveredDate(day)}
+                      onMouseLeave={() => setHoveredDate(null)}
+                    >
+                      {/* Date Number */}
                       <div
-                        key={event.id}
-                        className={`text-xs px-3 py-1.5 rounded-lg text-white truncate font-medium shadow-md transition-all hover:scale-105 ${getEventTypeStyle(
-                          event.type
-                        )}`}
-                        title={`${event.title} - ${event.description}`}
+                        className={`text-sm font-bold mb-2 flex items-center justify-between ${
+                          isToday
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                            : ""
+                        }`}
                       >
-                        {event.title}
+                        <span className={isToday ? "" : ""}>
+                          {day.getDate()}
+                        </span>
+                        {dayEvents.length > 0 && !isToday && (
+                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        )}
                       </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-blue-600 px-2 py-1 bg-blue-100 rounded-lg font-medium">
-                        +{dayEvents.length - 2} more
+
+                      {/* Events */}
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 2).map((event) => (
+                          <div
+                            key={event.id}
+                            className={`text-xs px-3 py-1.5 rounded-lg text-white truncate font-medium shadow-md transition-all hover:scale-105 ${getEventTypeStyle(
+                              event.eventType
+                            )}`}
+                            title={`${event.title} - ${event.description}`}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-xs text-blue-600 px-2 py-1 bg-blue-100 rounded-lg font-medium">
+                            +{dayEvents.length - 2} more
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Hover Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none"></div>
+                      {/* Hover Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none"></div>
 
-                  {/* Add Event Hint */}
-                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus className="h-4 w-4 text-blue-500" />
-                  </div>
-                </div>
-              );
-            })}
+                      {/* Add Event Hint */}
+                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus className="h-4 w-4 text-blue-500" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Add Event Modal */}
       <AddEventModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         selectedDate={selectedDate}
-        onAdd={handleAddEvent}
       />
     </div>
   );

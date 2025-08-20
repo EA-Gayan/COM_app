@@ -35,6 +35,7 @@ export const config = {
     "/home/:path*",
     "/orders/:path*",
     "/products/:path*",
+    "/upcomings/:path*",
     "/api/products/:path*", // Add this to include product API routes
     "/api/orders/:path*", // Add this to include product API routes
   ],
