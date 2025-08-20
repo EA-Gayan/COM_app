@@ -22,7 +22,7 @@ export const Navlinks = [
   },
   {
     id: 5,
-    url: "#_",
+    url: "/dashboard",
     label: "Admin Dashborad",
   },
 ];
