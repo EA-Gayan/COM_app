@@ -57,7 +57,6 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save hook to auto-generate orderId like "250820-01"
 // Pre-save hook with debug logs
 orderSchema.pre("validate", async function (next) {
   try {
@@ -70,10 +69,6 @@ orderSchema.pre("validate", async function (next) {
       const year = String(today.getFullYear()).slice(-2); // Get last 2 digits of year
       const month = String(today.getMonth() + 1).padStart(2, "0"); // Month (0-11, so +1)
       const day = String(today.getDate()).padStart(2, "0"); // Day
-
-      console.log("Year:", year);
-      console.log("Month:", month);
-      console.log("Day:", day);
 
       const datePart = `${year}${month}${day}`;
       console.log("Generated datePart:", datePart);
