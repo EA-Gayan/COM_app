@@ -1,8 +1,8 @@
 export interface EventProps {
   id: number;
   title: string;
-  start: Date;
-  end: Date;
+  startDate: Date;
+  endDate: Date;
   description: string;
-  type: string;
+  eventType: string;
 }

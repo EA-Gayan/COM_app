@@ -7,11 +7,11 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    start: {
+    startDate: {
       type: Date,
       required: true,
     },
-    end: {
+    endDate: {
       type: Date,
       required: true,
     },
@@ -19,7 +19,7 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    type: {
+    eventType: {
       type: String,
       required: true,
     },
