@@ -18,6 +18,7 @@
     "mongoose-sequence": "^6.0.1",
     "next": "15.4.6",
     "notistack": "^3.0.2",
+    "pdfkit": "^0.17.1",
     "react": "19.1.0",
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.1.0",

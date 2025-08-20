@@ -54,6 +54,7 @@ export interface CreateOrderProps {
     price: number;
     _id: string;
   }[];
+  isWhatsapp: boolean;
 }
 
 export interface Pagination {
