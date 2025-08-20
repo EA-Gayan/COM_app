@@ -8,6 +8,7 @@ export interface prodctsProps {
   stockQty: number;
   availableQty: number;
   sName: string;
+  _id: string;
 }
 
 export interface paginationProps {
