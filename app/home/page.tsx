@@ -50,6 +50,7 @@ const Home = () => {
     productId: number;
     name: string;
     price: number;
+    _id: string;
   }) => {
     setCart((prev) => {
       const existing = prev.find(
@@ -112,6 +113,7 @@ const Home = () => {
                     productId: product.productId,
                     name: product.name,
                     price: product.sellingPrice,
+                    _id: product._id,
                   })
                 }
               >

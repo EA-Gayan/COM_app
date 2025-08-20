@@ -21,7 +21,6 @@ async function createProductHandler(request) {
       sellingPrice,
       category,
       stockQty,
-      availableQty,
       sName,
     } = body;
 
@@ -88,20 +87,6 @@ async function createProductHandler(request) {
       );
     }
 
-    // Validate availableQty if provided
-    if (
-      availableQty !== undefined &&
-      (isNaN(availableQty) || availableQty < 0)
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Available quantity must be a valid non-negative number",
-        },
-        { status: 400 }
-      );
-    }
-
     // Create new product
     const newProduct = new Product({
       name: name.trim(),
@@ -110,7 +95,7 @@ async function createProductHandler(request) {
       sellingPrice: parseFloat(sellingPrice),
       category: category.trim(),
       stockQty: stockQty || 0,
-      availableQty: availableQty || 0,
+      availableQty: stockQty,
       sName: sName.trim(),
     });
 

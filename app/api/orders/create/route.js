@@ -1,6 +1,8 @@
 import { withApiAuth } from "../../../../lib/authMiddleware";
 import connectionToDataBase from "../../../../lib/mongoose";
 import Order from "../../../../models/orderModel";
+import Product from "../../../../models/productModel";
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 
 // Export protected route handlers
@@ -27,30 +29,38 @@ async function createOrderHandler(request) {
       );
     }
 
-    // Generate orderId: YYMMDD-XX
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const datePrefix = `${yy}${mm}${dd}`;
+    // Check stock availability before creating order
+    for (const item of items) {
+      const product = await Product.findOne({
+        _id: item._id,
+      });
 
-    // Count existing orders for today to get the sequence number
-    const todayOrdersCount = await Order.countDocuments({
-      createdAt: {
-        $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-        $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
-      },
-    });
+      if (!product) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Product with ID ${item._id} not found`,
+          },
+          { status: 400 }
+        );
+      }
 
-    const sequenceNumber = String(todayOrdersCount + 1).padStart(2, "0");
-    const orderId = `${datePrefix}-${sequenceNumber}`;
+      if (product.availableQty < item.quantity) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Insufficient stock for ${product.name}. Available: ${product.availableQty}, Requested: ${item.quantity}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Build order object
     const newOrder = new Order({
-      orderId,
       customerDetails: {
         name: customerDetails.name,
-        telNo: customerDetails.telNo,
+        telNo: customerDetails.tel,
       },
       orderStatus: orderStatus || 0,
       bills: {
@@ -64,15 +74,34 @@ async function createOrderHandler(request) {
         pricePerQuantity: item.pricePerQuantity,
         quantity: item.quantity,
         price: item.price,
+        _id: item._id,
       })),
     });
 
+    // Save the order
     await newOrder.save();
+
+    // Update product stock quantities
+    for (const item of items) {
+      await Product.findOneAndUpdate(
+        { _id: item._id },
+        {
+          $inc: {
+            stockQty: -item.quantity,
+            availableQty: -item.quantity,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Order created successfully",
+        message: "Order created successfully and stock updated",
         data: newOrder,
       },
       { status: 201 }

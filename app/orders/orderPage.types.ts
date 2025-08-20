@@ -52,6 +52,7 @@ export interface CreateOrderProps {
     pricePerQuantity: number;
     quantity: number;
     price: number;
+    _id: string;
   }[];
 }
 

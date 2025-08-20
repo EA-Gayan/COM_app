@@ -34,6 +34,7 @@ const Cart = (props: CartProps) => {
           pricePerQuantity: item.price,
           quantity: item.quantity,
           price: item.price * item.quantity,
+          _id: item._id,
         })),
       };
 
