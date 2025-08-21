@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// Order schema
+// --- Order schema ---
 const orderSchema = new mongoose.Schema(
   {
     customerDetails: {
@@ -14,16 +14,15 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: Number,
-      required: true,
-      default: 0, // 0 = pending, 1 = paid, 2 = shipped, etc.
-    },
+      default: 0,
+    }, // 0=pending,1=paid,etc.
     orderDate: {
       type: Date,
       default: Date.now,
     },
     bills: {
       total: { type: Number, required: true },
-      tax: { type: Number, required: true },
+      tax: { type: Number, default: 0 },
       discount: { type: Number, default: 0 },
     },
     items: [
@@ -42,5 +41,4 @@ const orderSchema = new mongoose.Schema(
 );
 
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
-
 export default Order;

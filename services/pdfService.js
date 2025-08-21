@@ -1,4 +1,5 @@
-import PDFDocument from "pdfkit";
+// services/pdfService.js
+import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import fs from "fs";
 import path from "path";
 
@@ -9,7 +10,7 @@ class PDFService {
 
     // Company information - you can move this to env variables or config
     this.companyInfo = {
-      name: process.env.COMPANY_NAME || "Company Name",
+      name: process.env.COMPANY_NAME || "Your Company Name",
       address:
         process.env.COMPANY_ADDRESS || "123 Business Street, City, State 12345",
       phone: process.env.COMPANY_PHONE || "(555) 123-4567",
@@ -26,7 +27,7 @@ class PDFService {
    */
   async generateInvoice(order, options = {}) {
     const filename =
-      options.filename || `invoice-${order._id}-${Date.now()}.pdf`;
+      options.filename || `invoice-${order.orderId}-${Date.now()}.pdf`;
     const filepath = path.join(this.tempDir, filename);
 
     return new Promise((resolve, reject) => {
@@ -61,7 +62,7 @@ class PDFService {
    */
   async generateReceipt(order, options = {}) {
     const filename =
-      options.filename || `receipt-${order._id}-${Date.now()}.pdf`;
+      options.filename || `receipt-${order.orderId}-${Date.now()}.pdf`;
     const filepath = path.join(this.tempDir, filename);
 
     return new Promise((resolve, reject) => {
@@ -96,7 +97,8 @@ class PDFService {
    */
   async generateOrderConfirmation(order, options = {}) {
     const filename =
-      options.filename || `order-confirmation-${order._id}-${Date.now()}.pdf`;
+      options.filename ||
+      `order-confirmation-${order.orderId}-${Date.now()}.pdf`;
     const filepath = path.join(this.tempDir, filename);
 
     return new Promise((resolve, reject) => {
@@ -170,7 +172,7 @@ class PDFService {
     yPosition += 20;
 
     doc.fontSize(8).font("Helvetica");
-    doc.text(`Receipt #: ${order._id}`, 20, yPosition);
+    doc.text(`Receipt #: ${order.orderId}`, 20, yPosition);
     yPosition += 12;
     doc.text(
       `Date: ${new Date(order.createdAt || Date.now()).toLocaleString()}`,
@@ -188,11 +190,11 @@ class PDFService {
     order.items.forEach((item) => {
       doc.text(`${item.name}`, 20, yPosition);
       doc.text(
-        `${item.quantity} x $${item.pricePerQuantity.toFixed(2)}`,
+        `${item.quantity} x Rs ${item.pricePerQuantity.toFixed(2)}`,
         150,
         yPosition
       );
-      doc.text(`$${item.price.toFixed(2)}`, 220, yPosition);
+      doc.text(`Rs ${item.price.toFixed(2)}`, 220, yPosition);
       yPosition += 12;
     });
 
@@ -202,7 +204,7 @@ class PDFService {
 
     // Total
     doc.fontSize(10).font("Helvetica-Bold");
-    doc.text(`TOTAL: $${order.bills.total.toFixed(2)}`, 20, yPosition, {
+    doc.text(`TOTAL: Rs ${order.bills.total.toFixed(2)}`, 20, yPosition, {
       align: "center",
     });
     yPosition += 20;
@@ -225,7 +227,7 @@ class PDFService {
 
     // Order details
     doc.fontSize(12);
-    doc.text(`Order #: ${order._id}`, 50, yPosition);
+    doc.text(`Order #: ${order.orderId}`, 50, yPosition);
     doc.text(
       `Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`,
       350,
@@ -297,16 +299,11 @@ class PDFService {
    */
   buildInvoiceDetails(doc, order, yPosition) {
     doc.fontSize(12);
-    doc.text(`Invoice #: ${order._id}`, 400, yPosition);
+    doc.text(`Invoice #: ${order.orderId}`, 400, yPosition);
     doc.text(
       `Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`,
       400,
       yPosition + 15
-    );
-    doc.text(
-      `Status: ${this.getOrderStatus(order.orderStatus)}`,
-      400,
-      yPosition + 30
     );
 
     // Due date (you can customize this logic)
@@ -396,11 +393,11 @@ class PDFService {
         width: 50,
         align: "center",
       });
-      doc.text(`$${item.pricePerQuantity.toFixed(2)}`, 320, rowPosition, {
+      doc.text(`Rs ${item.pricePerQuantity.toFixed(2)}`, 320, rowPosition, {
         width: 80,
         align: "right",
       });
-      doc.text(`$${item.price.toFixed(2)}`, 450, rowPosition, {
+      doc.text(`Rs ${item.price.toFixed(2)}`, 450, rowPosition, {
         width: 80,
         align: "right",
       });
@@ -437,7 +434,7 @@ class PDFService {
     // Subtotal
     doc.fontSize(10);
     doc.text("Subtotal:", totalsX, yPosition);
-    doc.text(`$${subtotal.toFixed(2)}`, amountX, yPosition, {
+    doc.text(`Rs ${subtotal.toFixed(2)}`, amountX, yPosition, {
       width: 80,
       align: "right",
     });
@@ -446,7 +443,7 @@ class PDFService {
     // Discount
     if (bills.discount && bills.discount > 0) {
       doc.text("Discount:", totalsX, yPosition);
-      doc.text(`-$${bills.discount.toFixed(2)}`, amountX, yPosition, {
+      doc.text(`-Rs ${bills.discount.toFixed(2)}`, amountX, yPosition, {
         width: 80,
         align: "right",
       });
@@ -456,7 +453,7 @@ class PDFService {
     // Tax
     if (bills.tax && bills.tax > 0) {
       doc.text("Tax:", totalsX, yPosition);
-      doc.text(`$${bills.tax.toFixed(2)}`, amountX, yPosition, {
+      doc.text(`Rs ${bills.tax.toFixed(2)}`, amountX, yPosition, {
         width: 80,
         align: "right",
       });
@@ -470,7 +467,7 @@ class PDFService {
     // Total amount
     doc.fontSize(14).font("Helvetica-Bold");
     doc.text("Total:", totalsX, yPosition);
-    doc.text(`$${bills.total.toFixed(2)}`, amountX, yPosition, {
+    doc.text(`Rs ${bills.total.toFixed(2)}`, amountX, yPosition, {
       width: 80,
       align: "right",
     });
@@ -515,7 +512,7 @@ class PDFService {
    * @param {Object} options - Generation options
    * @returns {Promise<Buffer>} - PDF buffer
    */
-  async generateBuffer(order, type = "invoice", options = {}) {
+  async generateBuffer(order, type, options = {}) {
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({ margin: 50, size: "A4" });
