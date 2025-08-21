@@ -2,8 +2,8 @@ import { withApiAuth } from "../../../../lib/authMiddleware";
 import connectionToDataBase from "../../../../lib/mongoose";
 import Order from "../../../../models/orderModel";
 import Product from "../../../../models/productModel";
-import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import pdfService from "../../../../services/pdfService";
 
 // Export protected route handlers
 export const POST = withApiAuth(createOrderHandler);
@@ -13,7 +13,7 @@ async function createOrderHandler(request) {
     await connectionToDataBase();
 
     const body = await request.json();
-    const { customerDetails, items, bills, orderStatus, isWhatsapp } = body;
+    const { customerDetails, items, bills, orderStatus } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -29,11 +29,9 @@ async function createOrderHandler(request) {
       );
     }
 
-    // Check stock availability before creating order
+    // ✅ Check stock availability
     for (const item of items) {
-      const product = await Product.findOne({
-        _id: item._id,
-      });
+      const product = await Product.findOne({ _id: item._id });
 
       if (!product) {
         return NextResponse.json(
@@ -56,12 +54,25 @@ async function createOrderHandler(request) {
       }
     }
 
-    // Build order object
+    // ✅ Generate orderId manually (YYMMDD-XXX)
+    const today = new Date();
+    const year = String(today.getFullYear()).slice(-2);
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    const datePart = `${year}${month}${day}`;
+    const randomPart = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
+
+    const orderId = `${datePart}-${randomPart}`;
+
+    // ✅ Build order object
     const newOrder = new Order({
       customerDetails: {
         name: customerDetails.name,
         telNo: customerDetails.tel,
       },
+      orderId, // 👈 custom order id
       orderStatus: orderStatus || 0,
       bills: {
         total: bills.total,
@@ -78,10 +89,10 @@ async function createOrderHandler(request) {
       })),
     });
 
-    // Save the order
+    // ✅ Save the order
     await newOrder.save();
 
-    // Update product stock quantities
+    // ✅ Update product stock quantities
     for (const item of items) {
       await Product.findOneAndUpdate(
         { _id: item._id },
@@ -91,21 +102,21 @@ async function createOrderHandler(request) {
             availableQty: -item.quantity,
           },
         },
-        {
-          new: true,
-          runValidators: true,
-        }
+        { new: true, runValidators: true }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Order created successfully and stock updated",
-        data: newOrder,
+    // ✅ Generate PDF buffer
+    const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
+
+    // ✅ Return PDF file with custom orderId
+    return new NextResponse(pdfBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename=invoice-${newOrder.orderId}.pdf`,
       },
-      { status: 201 }
-    );
+    });
   } catch (error) {
     console.error("Create order error:", error);
 
