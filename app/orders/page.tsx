@@ -5,6 +5,7 @@ import Spinner from "@/components/Common/Spinner/Spinner";
 import Nav from "@/components/Helper/Navbar/Nav";
 import { useEffect, useState } from "react";
 import { OrderProps, Pagination } from "./orderPage.types";
+import { FaDownload } from "react-icons/fa";
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState<OrderProps[]>([]);
@@ -65,6 +66,30 @@ const OrdersPage = () => {
     }
   };
 
+  const handleDownload = async (_Id: string, orderId: string) => {
+    try {
+      const res = await fetch("/api/orders/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: _Id }),
+      });
+
+      if (!res.ok) throw new Error("Failed to download invoice");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to download invoice");
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
@@ -88,8 +113,17 @@ const OrdersPage = () => {
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="border rounded-lg p-4 shadow-sm bg-white"
+                className="relative border rounded-lg p-4 shadow-sm bg-white"
               >
+                {/* Download Icon */}
+                <button
+                  onClick={() => handleDownload(order._id, order.orderId)}
+                  className="absolute top-2 right-2 text-blue-800 hover:text-blue-950"
+                  title="Download Invoice"
+                >
+                  <FaDownload size={18} />
+                </button>
+
                 <h3 className="font-semibold text-lg text-gray-800">
                   Order #{order.orderId}
                 </h3>
@@ -114,7 +148,7 @@ const OrdersPage = () => {
                   Total: Rs {order?.bills?.total}
                 </p>
 
-                {/* Order Items Preview */}
+                {/* Items Preview */}
                 <div className="mt-3">
                   <h4 className="font-medium text-gray-700">Items:</h4>
                   <ul className="list-disc list-inside text-sm text-gray-600">

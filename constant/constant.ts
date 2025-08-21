@@ -7,7 +7,7 @@ export const Navlinks = [
   {
     id: 2,
     url: "/orders",
-    label: "passed Oders",
+    label: "Previous Oders",
   },
 
   {
