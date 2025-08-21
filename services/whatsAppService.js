@@ -10,9 +10,9 @@ class WhatsAppService {
     this.token = process.env.WHATSAPP_TOKEN;
 
     // Twilio credentials (if using Twilio)
-    this.twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    this.twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    this.twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
+    // this.twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    // this.twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    // this.twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
   }
 
   /**
@@ -190,35 +190,35 @@ class WhatsAppService {
   /**
    * Alternative: Send via Twilio WhatsApp
    */
-  async sendViaTwilio(phoneNumber, pdfPath, order) {
-    if (!this.twilioSid || !this.twilioToken || !this.twilioWhatsAppNumber) {
-      throw new Error("Twilio credentials not configured");
-    }
+  // async sendViaTwilio(phoneNumber, pdfPath, order) {
+  //   if (!this.twilioSid || !this.twilioToken || !this.twilioWhatsAppNumber) {
+  //     throw new Error("Twilio credentials not configured");
+  //   }
 
-    const client = require("twilio")(this.twilioSid, this.twilioToken);
+  //   const client = require("twilio")(this.twilioSid, this.twilioToken);
 
-    try {
-      // You'd need to upload the file to a public URL first
-      const publicUrl = await this.uploadToPublicStorage(pdfPath);
+  //   try {
+  //     // You'd need to upload the file to a public URL first
+  //     const publicUrl = await this.uploadToPublicStorage(pdfPath);
 
-      const message = await client.messages.create({
-        from: `whatsapp:${this.twilioWhatsAppNumber}`,
-        to: `whatsapp:${phoneNumber}`,
-        body: `📄 Your invoice for order #${
-          order._id
-        }\n\nTotal: $${order.bills.total.toFixed(
-          2
-        )}\n\nThank you for your purchase! 🙏`,
-        mediaUrl: [publicUrl],
-      });
+  //     const message = await client.messages.create({
+  //       from: `whatsapp:${this.twilioWhatsAppNumber}`,
+  //       to: `whatsapp:${phoneNumber}`,
+  //       body: `📄 Your invoice for order #${
+  //         order._id
+  //       }\n\nTotal: $${order.bills.total.toFixed(
+  //         2
+  //       )}\n\nThank you for your purchase! 🙏`,
+  //       mediaUrl: [publicUrl],
+  //     });
 
-      console.log(`Twilio WhatsApp invoice sent successfully: ${message.sid}`);
-      return message;
-    } catch (error) {
-      console.error("Twilio WhatsApp error:", error);
-      throw error;
-    }
-  }
+  //     console.log(`Twilio WhatsApp invoice sent successfully: ${message.sid}`);
+  //     return message;
+  //   } catch (error) {
+  //     console.error("Twilio WhatsApp error:", error);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Send a simple text message
