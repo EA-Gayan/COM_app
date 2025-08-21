@@ -6,6 +6,16 @@ class PDFService {
   constructor() {
     this.tempDir = path.join(process.cwd(), "temp");
     this.ensureTempDirectory();
+
+    // Company information - you can move this to env variables or config
+    this.companyInfo = {
+      name: process.env.COMPANY_NAME || "Company Name",
+      address:
+        process.env.COMPANY_ADDRESS || "123 Business Street, City, State 12345",
+      phone: process.env.COMPANY_PHONE || "(555) 123-4567",
+      email: process.env.COMPANY_EMAIL || "info@company.com",
+      logo: process.env.COMPANY_LOGO_PATH || null, // Path to logo image
+    };
   }
 
   /**
@@ -15,52 +25,23 @@ class PDFService {
    * @returns {Promise<string>} - Path to generated PDF
    */
   async generateInvoice(order, options = {}) {
-    const config = {
-      companyName:
-        options.companyName || process.env.COMPANY_NAME || "Sineth Studio",
-      companyAddress:
-        options.companyAddress ||
-        process.env.COMPANY_ADDRESS ||
-        "123 Business Street, City, State 12345",
-      companyPhone:
-        options.companyPhone || process.env.COMPANY_PHONE || "(555) 123-4567",
-      companyEmail:
-        options.companyEmail || process.env.COMPANY_EMAIL || "info@company.com",
-      logo: options.logo || null,
-      theme: options.theme || "default",
-      ...options,
-    };
+    const filename =
+      options.filename || `invoice-${order._id}-${Date.now()}.pdf`;
+    const filepath = path.join(this.tempDir, filename);
 
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
           margin: 50,
           size: "A4",
-          info: {
-            Title: `Invoice ${order._id}`,
-            Author: config.companyName,
-            Subject: "Invoice",
-            Keywords: "invoice, order, receipt",
-          },
+          ...options.documentOptions,
         });
 
-        const filename = `invoice-${order._id}-${Date.now()}.pdf`;
-        const filepath = path.join(this.tempDir, filename);
         const stream = fs.createWriteStream(filepath);
-
         doc.pipe(stream);
 
-        // Build PDF content based on theme
-        switch (config.theme) {
-          case "modern":
-            this.buildModernInvoice(doc, order, config);
-            break;
-          case "minimal":
-            this.buildMinimalInvoice(doc, order, config);
-            break;
-          default:
-            this.buildStandardInvoice(doc, order, config);
-        }
+        // Build invoice content
+        this.buildInvoiceContent(doc, order, options);
 
         doc.end();
 
@@ -74,17 +55,29 @@ class PDFService {
 
   /**
    * Generate receipt PDF (simpler format)
+   * @param {Object} order - Order object
+   * @param {Object} options - PDF generation options
+   * @returns {Promise<string>} - Path to generated PDF
    */
   async generateReceipt(order, options = {}) {
+    const filename =
+      options.filename || `receipt-${order._id}-${Date.now()}.pdf`;
+    const filepath = path.join(this.tempDir, filename);
+
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 30, size: [400, 600] });
-        const filename = `receipt-${order._id}-${Date.now()}.pdf`;
-        const filepath = path.join(this.tempDir, filename);
-        const stream = fs.createWriteStream(filepath);
+        const doc = new PDFDocument({
+          margin: 30,
+          size: [300, 600], // Receipt size
+          ...options.documentOptions,
+        });
 
+        const stream = fs.createWriteStream(filepath);
         doc.pipe(stream);
-        this.buildReceipt(doc, order, options);
+
+        // Build receipt content
+        this.buildReceiptContent(doc, order, options);
+
         doc.end();
 
         stream.on("finish", () => resolve(filepath));
@@ -97,17 +90,24 @@ class PDFService {
 
   /**
    * Generate order confirmation PDF
+   * @param {Object} order - Order object
+   * @param {Object} options - PDF generation options
+   * @returns {Promise<string>} - Path to generated PDF
    */
   async generateOrderConfirmation(order, options = {}) {
+    const filename =
+      options.filename || `order-confirmation-${order._id}-${Date.now()}.pdf`;
+    const filepath = path.join(this.tempDir, filename);
+
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 50 });
-        const filename = `order-confirmation-${order._id}-${Date.now()}.pdf`;
-        const filepath = path.join(this.tempDir, filename);
+        const doc = new PDFDocument({ margin: 50, size: "A4" });
         const stream = fs.createWriteStream(filepath);
-
         doc.pipe(stream);
-        this.buildOrderConfirmation(doc, order, options);
+
+        // Build order confirmation content
+        this.buildOrderConfirmationContent(doc, order, options);
+
         doc.end();
 
         stream.on("finish", () => resolve(filepath));
@@ -119,435 +119,434 @@ class PDFService {
   }
 
   /**
-   * Build standard invoice layout
+   * Build invoice content
+   * @private
    */
-  buildStandardInvoice(doc, order, config) {
-    let yPos = 50;
+  buildInvoiceContent(doc, order, options = {}) {
+    let yPosition = 50;
 
-    // Header with company info
-    yPos = this.addCompanyHeader(doc, config, yPos);
-    yPos += 20;
+    // Header with company info and logo
+    yPosition = this.buildHeader(doc, "INVOICE", yPosition, options);
 
-    // Invoice title and details
-    yPos = this.addInvoiceHeader(doc, order, yPos);
-    yPos += 30;
+    // Invoice details
+    yPosition = this.buildInvoiceDetails(doc, order, yPosition);
 
-    // Customer details
-    yPos = this.addCustomerDetails(doc, order, yPos);
-    yPos += 30;
+    // Customer information
+    yPosition = this.buildCustomerInfo(doc, order, yPosition);
 
     // Items table
-    yPos = this.addItemsTable(doc, order.items, yPos);
-    yPos += 20;
+    yPosition = this.buildItemsTable(doc, order.items, yPosition, options);
 
-    // Totals
-    yPos = this.addTotalsSection(doc, order.bills, yPos);
-    yPos += 30;
+    // Totals section
+    yPosition = this.buildTotalsSection(doc, order.bills, yPosition);
 
     // Footer
-    this.addFooter(doc, config);
+    this.buildFooter(doc, options);
   }
 
   /**
-   * Build modern invoice layout (with colors and styling)
+   * Build receipt content (compact format)
+   * @private
    */
-  buildModernInvoice(doc, order, config) {
-    // Modern design with color accents
-    const primaryColor = [41, 128, 185]; // Blue
-    const accentColor = [52, 73, 94]; // Dark gray
+  buildReceiptContent(doc, order, options = {}) {
+    let yPosition = 20;
 
-    // Header background
-    doc.rect(0, 0, doc.page.width, 120).fill(primaryColor);
+    // Simple header
+    doc.fontSize(16).font("Helvetica-Bold");
+    doc.text(this.companyInfo.name, 20, yPosition, { align: "center" });
+    yPosition += 20;
 
-    // Company name in white
-    doc.fill("white").fontSize(28).text(config.companyName, 50, 40);
-    doc.fontSize(12).text(config.companyAddress, 50, 75);
-    doc.text(`${config.companyPhone} | ${config.companyEmail}`, 50, 90);
+    doc.fontSize(8).font("Helvetica");
+    doc.text(this.companyInfo.address, 20, yPosition, { align: "center" });
+    yPosition += 15;
+    doc.text(`Phone: ${this.companyInfo.phone}`, 20, yPosition, {
+      align: "center",
+    });
+    yPosition += 20;
 
-    // Invoice details box
-    doc.rect(400, 40, 150, 60).stroke(accentColor);
-    doc.fill(accentColor).fontSize(16).text("INVOICE", 410, 50);
-    doc.fill("black").fontSize(10);
-    doc.text(`#${order._id}`, 410, 70);
+    // Receipt title and details
+    doc.fontSize(12).font("Helvetica-Bold");
+    doc.text("RECEIPT", 20, yPosition, { align: "center" });
+    yPosition += 20;
+
+    doc.fontSize(8).font("Helvetica");
+    doc.text(`Receipt #: ${order._id}`, 20, yPosition);
+    yPosition += 12;
     doc.text(
-      new Date(order.createdAt || Date.now()).toLocaleDateString(),
-      410,
-      85
+      `Date: ${new Date(order.createdAt || Date.now()).toLocaleString()}`,
+      20,
+      yPosition
+    );
+    yPosition += 12;
+    doc.text(`Customer: ${order.customerDetails.name}`, 20, yPosition);
+    yPosition += 20;
+
+    // Simple items list
+    doc.text("Items:", 20, yPosition);
+    yPosition += 15;
+
+    order.items.forEach((item) => {
+      doc.text(`${item.name}`, 20, yPosition);
+      doc.text(
+        `${item.quantity} x $${item.pricePerQuantity.toFixed(2)}`,
+        150,
+        yPosition
+      );
+      doc.text(`$${item.price.toFixed(2)}`, 220, yPosition);
+      yPosition += 12;
+    });
+
+    yPosition += 10;
+    doc.moveTo(20, yPosition).lineTo(280, yPosition).stroke();
+    yPosition += 10;
+
+    // Total
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text(`TOTAL: $${order.bills.total.toFixed(2)}`, 20, yPosition, {
+      align: "center",
+    });
+    yPosition += 20;
+
+    doc.fontSize(8).font("Helvetica");
+    doc.text("Thank you for your business!", 20, yPosition, {
+      align: "center",
+    });
+  }
+
+  /**
+   * Build order confirmation content
+   * @private
+   */
+  buildOrderConfirmationContent(doc, order, options = {}) {
+    let yPosition = 50;
+
+    // Header
+    yPosition = this.buildHeader(doc, "ORDER CONFIRMATION", yPosition, options);
+
+    // Order details
+    doc.fontSize(12);
+    doc.text(`Order #: ${order._id}`, 50, yPosition);
+    doc.text(
+      `Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`,
+      350,
+      yPosition
+    );
+    yPosition += 20;
+    doc.text(
+      `Status: ${this.getOrderStatus(order.orderStatus)}`,
+      50,
+      yPosition
+    );
+    yPosition += 30;
+
+    // Customer info
+    yPosition = this.buildCustomerInfo(doc, order, yPosition);
+
+    // Items
+    yPosition = this.buildItemsTable(doc, order.items, yPosition, options);
+
+    // Order summary
+    yPosition = this.buildTotalsSection(doc, order.bills, yPosition);
+
+    // Additional info
+    doc.fontSize(10);
+    doc.text("We will notify you when your order ships.", 50, yPosition + 20);
+    doc.text(
+      "For questions about your order, please contact us.",
+      50,
+      yPosition + 35
+    );
+  }
+
+  /**
+   * Build document header
+   * @private
+   */
+  buildHeader(doc, title, yPosition, options = {}) {
+    // Add logo if available
+    if (this.companyInfo.logo && fs.existsSync(this.companyInfo.logo)) {
+      try {
+        doc.image(this.companyInfo.logo, 50, yPosition, { width: 60 });
+      } catch (error) {
+        console.warn("Could not load company logo:", error.message);
+      }
+    }
+
+    // Company info
+    doc.fontSize(20).font("Helvetica-Bold");
+    doc.text(this.companyInfo.name, 120, yPosition);
+
+    doc.fontSize(10).font("Helvetica");
+    doc.text(this.companyInfo.address, 120, yPosition + 25);
+    doc.text(
+      `Phone: ${this.companyInfo.phone} | Email: ${this.companyInfo.email}`,
+      120,
+      yPosition + 40
     );
 
-    let yPos = 150;
+    // Document title
+    doc.fontSize(24).font("Helvetica-Bold");
+    doc.text(title, 400, yPosition, { align: "right" });
 
-    // Customer section with accent line
-    doc.rect(50, yPos, 500, 2).fill(primaryColor);
-    yPos += 15;
-
-    yPos = this.addCustomerDetails(doc, order, yPos);
-    yPos += 30;
-
-    // Items with alternating row colors
-    yPos = this.addStyledItemsTable(doc, order.items, yPos, primaryColor);
-    yPos += 20;
-
-    // Totals with accent background
-    yPos = this.addStyledTotalsSection(doc, order.bills, yPos, primaryColor);
-
-    this.addFooter(doc, config);
+    return yPosition + 90;
   }
 
   /**
-   * Build minimal invoice layout
+   * Build invoice-specific details
+   * @private
    */
-  buildMinimalInvoice(doc, order, config) {
-    doc.fontSize(32).text("Invoice", 50, 50);
-    doc
-      .fontSize(10)
-      .text(`#${order._id} • ${new Date().toLocaleDateString()}`, 50, 85);
-
-    let yPos = 120;
-
-    // Simple customer info
-    doc.fontSize(12).text(`Bill to: ${order.customerDetails.name}`, 50, yPos);
-    doc.text(`Phone: ${order.customerDetails.telNo}`, 50, yPos + 15);
-    yPos += 50;
-
-    // Clean items list
-    yPos = this.addMinimalItemsList(doc, order.items, yPos);
-    yPos += 30;
-
-    // Simple total
-    doc.fontSize(16).text(`Total: $${order.bills.total.toFixed(2)}`, 400, yPos);
-  }
-
-  /**
-   * Add company header
-   */
-  addCompanyHeader(doc, config, yPos) {
-    if (config.logo && fs.existsSync(config.logo)) {
-      doc.image(config.logo, 50, yPos, { width: 80 });
-      doc.fontSize(24).text(config.companyName, 150, yPos + 10);
-      doc.fontSize(10).text(config.companyAddress, 150, yPos + 40);
-      doc.text(
-        `${config.companyPhone} | ${config.companyEmail}`,
-        150,
-        yPos + 55
-      );
-      return yPos + 80;
-    } else {
-      doc.fontSize(24).text(config.companyName, 50, yPos);
-      doc.fontSize(10).text(config.companyAddress, 50, yPos + 30);
-      doc.text(
-        `${config.companyPhone} | ${config.companyEmail}`,
-        50,
-        yPos + 45
-      );
-      return yPos + 65;
-    }
-  }
-
-  /**
-   * Add invoice header
-   */
-  addInvoiceHeader(doc, order, yPos) {
-    // Invoice title and number
-    doc.fontSize(20).text("INVOICE", 400, yPos);
-    doc.fontSize(12).text(`Invoice #: ${order._id}`, 400, yPos + 25);
+  buildInvoiceDetails(doc, order, yPosition) {
+    doc.fontSize(12);
+    doc.text(`Invoice #: ${order._id}`, 400, yPosition);
     doc.text(
       `Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`,
       400,
-      yPos + 40
+      yPosition + 15
     );
     doc.text(
       `Status: ${this.getOrderStatus(order.orderStatus)}`,
       400,
-      yPos + 55
+      yPosition + 30
     );
 
-    // Horizontal line
-    doc
-      .moveTo(50, yPos + 80)
-      .lineTo(550, yPos + 80)
-      .stroke();
+    // Due date (you can customize this logic)
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+    doc.text(`Due Date: ${dueDate.toLocaleDateString()}`, 400, yPosition + 45);
 
-    return yPos + 85;
+    return yPosition + 70;
   }
 
   /**
-   * Add customer details
+   * Build customer information section
+   * @private
    */
-  addCustomerDetails(doc, order, yPos) {
-    doc.fontSize(14).text("Bill To:", 50, yPos);
-    doc.fontSize(12).text(`${order.customerDetails.name}`, 50, yPos + 20);
-    doc.text(`${order.customerDetails.telNo}`, 50, yPos + 35);
+  buildCustomerInfo(doc, order, yPosition) {
+    // Draw line
+    doc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
+    yPosition += 20;
 
-    return yPos + 60;
+    doc.fontSize(14).font("Helvetica-Bold");
+    doc.text("Bill To:", 50, yPosition);
+    yPosition += 20;
+
+    doc.fontSize(12).font("Helvetica");
+    doc.text(`Customer: ${order.customerDetails.name}`, 50, yPosition);
+    doc.text(`Phone: ${order.customerDetails.telNo}`, 50, yPosition + 15);
+
+    // Add more customer details if available
+    if (order.customerDetails.email) {
+      doc.text(`Email: ${order.customerDetails.email}`, 50, yPosition + 30);
+      yPosition += 15;
+    }
+
+    if (order.customerDetails.address) {
+      doc.text(`Address: ${order.customerDetails.address}`, 50, yPosition + 30);
+      yPosition += 15;
+    }
+
+    return yPosition + 50;
   }
 
   /**
-   * Add items table
+   * Build items table
+   * @private
    */
-  addItemsTable(doc, items, yPos) {
+  buildItemsTable(doc, items, yPosition, options = {}) {
+    const tableTop = yPosition;
+
     // Table headers
     doc.fontSize(12).font("Helvetica-Bold");
-    doc.text("Description", 50, yPos);
-    doc.text("Qty", 300, yPos);
-    doc.text("Unit Price", 360, yPos);
-    doc.text("Total", 450, yPos);
+    doc.text("Description", 50, tableTop);
+    doc.text("Qty", 250, tableTop, { width: 50, align: "center" });
+    doc.text("Unit Price", 320, tableTop, { width: 80, align: "right" });
+    doc.text("Amount", 450, tableTop, { width: 80, align: "right" });
 
     // Header line
-    yPos += 20;
-    doc.moveTo(50, yPos).lineTo(520, yPos).stroke();
-    yPos += 10;
+    yPosition = tableTop + 15;
+    doc.moveTo(50, yPosition).lineTo(530, yPosition).stroke();
 
-    // Items
+    // Table rows
     doc.font("Helvetica");
-    items.forEach((item) => {
-      yPos += 20;
+    let rowPosition = yPosition + 10;
 
-      // Check for page break
-      if (yPos > 700) {
+    items.forEach((item, index) => {
+      // Check if we need a new page
+      if (rowPosition > doc.page.height - 150) {
         doc.addPage();
-        yPos = 50;
+        rowPosition = 50;
+
+        // Repeat headers on new page
+        doc.fontSize(12).font("Helvetica-Bold");
+        doc.text("Description", 50, rowPosition);
+        doc.text("Qty", 250, rowPosition, { width: 50, align: "center" });
+        doc.text("Unit Price", 320, rowPosition, { width: 80, align: "right" });
+        doc.text("Amount", 450, rowPosition, { width: 80, align: "right" });
+
+        rowPosition += 20;
+        doc.moveTo(50, rowPosition).lineTo(530, rowPosition).stroke();
+        rowPosition += 10;
+        doc.font("Helvetica");
       }
 
-      doc.text(item.name, 50, yPos, { width: 220 });
-      doc.text(item.quantity.toString(), 300, yPos);
-      doc.text(`$${item.pricePerQuantity.toFixed(2)}`, 360, yPos);
-      doc.text(`$${item.price.toFixed(2)}`, 450, yPos);
-    });
+      // Item row
+      doc.fontSize(10);
+      doc.text(item.name, 50, rowPosition, { width: 180 });
+      doc.text(item.quantity.toString(), 250, rowPosition, {
+        width: 50,
+        align: "center",
+      });
+      doc.text(`$${item.pricePerQuantity.toFixed(2)}`, 320, rowPosition, {
+        width: 80,
+        align: "right",
+      });
+      doc.text(`$${item.price.toFixed(2)}`, 450, rowPosition, {
+        width: 80,
+        align: "right",
+      });
 
-    return yPos + 30;
-  }
-
-  /**
-   * Add styled items table (for modern theme)
-   */
-  addStyledItemsTable(doc, items, yPos, primaryColor) {
-    // Header with background
-    doc.rect(50, yPos, 470, 25).fill(primaryColor);
-    doc.fill("white").fontSize(12).font("Helvetica-Bold");
-    doc.text("Description", 60, yPos + 8);
-    doc.text("Qty", 300, yPos + 8);
-    doc.text("Unit Price", 360, yPos + 8);
-    doc.text("Total", 450, yPos + 8);
-
-    yPos += 25;
-    let isEven = false;
-
-    doc.fill("black").font("Helvetica");
-    items.forEach((item) => {
-      yPos += 20;
-
-      // Alternating row colors
-      if (isEven) {
-        doc.rect(50, yPos - 2, 470, 20).fill([245, 245, 245]);
+      // Add item description if available
+      if (item.description && options.showItemDescriptions) {
+        rowPosition += 15;
+        doc.fontSize(8).fillColor("gray");
+        doc.text(item.description, 50, rowPosition, { width: 180 });
+        doc.fillColor("black");
       }
 
-      doc.fill("black");
-      doc.text(item.name, 60, yPos, { width: 220 });
-      doc.text(item.quantity.toString(), 300, yPos);
-      doc.text(`$${item.pricePerQuantity.toFixed(2)}`, 360, yPos);
-      doc.text(`$${item.price.toFixed(2)}`, 450, yPos);
-
-      isEven = !isEven;
+      rowPosition += 20;
     });
 
-    return yPos + 30;
+    return rowPosition + 10;
   }
 
   /**
-   * Add minimal items list
+   * Build totals section
+   * @private
    */
-  addMinimalItemsList(doc, items, yPos) {
-    items.forEach((item) => {
-      doc.text(`${item.quantity}x ${item.name}`, 50, yPos);
-      doc.text(`$${item.price.toFixed(2)}`, 450, yPos);
-      yPos += 20;
-    });
-
-    return yPos;
-  }
-
-  /**
-   * Add totals section
-   */
-  addTotalsSection(doc, bills, yPos) {
+  buildTotalsSection(doc, bills, yPosition) {
     const totalsX = 350;
+    const amountX = 450;
 
-    // Subtotal calculation
+    // Separator line
+    doc.moveTo(totalsX, yPosition).lineTo(530, yPosition).stroke();
+    yPosition += 15;
+
+    // Calculate subtotal
     const subtotal = bills.total - (bills.tax || 0) + (bills.discount || 0);
 
-    if (subtotal !== bills.total || bills.discount > 0 || bills.tax > 0) {
-      doc.text(`Subtotal: $${subtotal.toFixed(2)}`, totalsX, yPos);
-      yPos += 20;
+    // Subtotal
+    doc.fontSize(10);
+    doc.text("Subtotal:", totalsX, yPosition);
+    doc.text(`$${subtotal.toFixed(2)}`, amountX, yPosition, {
+      width: 80,
+      align: "right",
+    });
+    yPosition += 15;
 
-      if (bills.discount > 0) {
-        doc.text(`Discount: -$${bills.discount.toFixed(2)}`, totalsX, yPos);
-        yPos += 20;
-      }
-
-      if (bills.tax > 0) {
-        doc.text(`Tax: $${bills.tax.toFixed(2)}`, totalsX, yPos);
-        yPos += 20;
-      }
-
-      // Total line
-      doc.moveTo(totalsX, yPos).lineTo(520, yPos).stroke();
-      yPos += 10;
+    // Discount
+    if (bills.discount && bills.discount > 0) {
+      doc.text("Discount:", totalsX, yPosition);
+      doc.text(`-$${bills.discount.toFixed(2)}`, amountX, yPosition, {
+        width: 80,
+        align: "right",
+      });
+      yPosition += 15;
     }
 
-    // Total
-    doc.fontSize(16).font("Helvetica-Bold");
-    doc.text(`Total: $${bills.total.toFixed(2)}`, totalsX, yPos);
-
-    return yPos + 40;
-  }
-
-  /**
-   * Add styled totals section (for modern theme)
-   */
-  addStyledTotalsSection(doc, bills, yPos, primaryColor) {
-    const totalsX = 320;
-    const boxWidth = 200;
-
-    // Background box
-    doc.rect(totalsX, yPos, boxWidth, 80).fill([248, 249, 250]);
-    doc.rect(totalsX, yPos, boxWidth, 80).stroke([200, 200, 200]);
-
-    yPos += 15;
-    const subtotal = bills.total - (bills.tax || 0) + (bills.discount || 0);
-
-    doc.fill("black").fontSize(12);
-    if (bills.discount > 0 || bills.tax > 0) {
-      doc.text(`Subtotal: $${subtotal.toFixed(2)}`, totalsX + 15, yPos);
-      yPos += 15;
-
-      if (bills.discount > 0) {
-        doc.text(
-          `Discount: -$${bills.discount.toFixed(2)}`,
-          totalsX + 15,
-          yPos
-        );
-        yPos += 15;
-      }
-
-      if (bills.tax > 0) {
-        doc.text(`Tax: $${bills.tax.toFixed(2)}`, totalsX + 15, yPos);
-        yPos += 15;
-      }
+    // Tax
+    if (bills.tax && bills.tax > 0) {
+      doc.text("Tax:", totalsX, yPosition);
+      doc.text(`$${bills.tax.toFixed(2)}`, amountX, yPosition, {
+        width: 80,
+        align: "right",
+      });
+      yPosition += 15;
     }
 
-    // Total with accent background
-    doc.rect(totalsX, yPos, boxWidth, 25).fill(primaryColor);
-    doc.fill("white").fontSize(14).font("Helvetica-Bold");
-    doc.text(`Total: $${bills.total.toFixed(2)}`, totalsX + 15, yPos + 5);
+    // Total line
+    doc.moveTo(totalsX, yPosition).lineTo(530, yPosition).stroke();
+    yPosition += 10;
 
-    return yPos + 40;
-  }
-
-  /**
-   * Build simple receipt
-   */
-  buildReceipt(doc, order, options) {
-    const companyName = options.companyName || "Your Store";
-
-    // Receipt header
-    doc.fontSize(16).text(companyName, 50, 30, { align: "center" });
-    doc.fontSize(10).text("RECEIPT", 50, 50, { align: "center" });
-    doc.text(`#${order._id}`, 50, 65, { align: "center" });
-    doc.text(new Date().toLocaleString(), 50, 80, { align: "center" });
-
-    let yPos = 110;
-
-    // Customer
-    doc.text(`Customer: ${order.customerDetails.name}`, 30, yPos);
-    yPos += 25;
-
-    // Items
-    doc.text("Items:", 30, yPos);
-    yPos += 15;
-
-    order.items.forEach((item) => {
-      doc.text(`${item.quantity}x ${item.name}`, 40, yPos);
-      doc.text(`$${item.price.toFixed(2)}`, 300, yPos);
-      yPos += 15;
+    // Total amount
+    doc.fontSize(14).font("Helvetica-Bold");
+    doc.text("Total:", totalsX, yPosition);
+    doc.text(`$${bills.total.toFixed(2)}`, amountX, yPosition, {
+      width: 80,
+      align: "right",
     });
 
-    yPos += 10;
-    doc.moveTo(40, yPos).lineTo(350, yPos).stroke();
-    yPos += 15;
-
-    // Total
-    doc.fontSize(12).text(`TOTAL: $${order.bills.total.toFixed(2)}`, 40, yPos);
-
-    // Thank you message
-    yPos += 40;
-    doc
-      .fontSize(10)
-      .text("Thank you for your business!", 50, yPos, { align: "center" });
+    return yPosition + 30;
   }
 
   /**
-   * Build order confirmation
+   * Build document footer
+   * @private
    */
-  buildOrderConfirmation(doc, order, options) {
-    doc.fontSize(24).text("Order Confirmation", 50, 50);
-    doc.fontSize(12).text(`Order #: ${order._id}`, 50, 85);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 50, 100);
-
-    let yPos = 140;
-
-    doc.fontSize(14).text("Thank you for your order!", 50, yPos);
-    yPos += 30;
-
-    doc.fontSize(12).text(`Customer: ${order.customerDetails.name}`, 50, yPos);
-    doc.text(`Phone: ${order.customerDetails.telNo}`, 50, yPos + 15);
-    yPos += 45;
-
-    doc.text("Order Details:", 50, yPos);
-    yPos += 20;
-
-    order.items.forEach((item) => {
-      doc.text(
-        `• ${item.quantity}x ${item.name} - $${item.price.toFixed(2)}`,
-        70,
-        yPos
-      );
-      yPos += 20;
-    });
-
-    yPos += 20;
-    doc.fontSize(14).text(`Total: $${order.bills.total.toFixed(2)}`, 50, yPos);
-
-    yPos += 40;
-    doc
-      .fontSize(12)
-      .text(
-        "Your order is being processed and you will receive updates shortly.",
-        50,
-        yPos
-      );
-  }
-
-  /**
-   * Add footer
-   */
-  addFooter(doc, config) {
+  buildFooter(doc, options = {}) {
     const footerY = doc.page.height - 100;
-    doc.fontSize(10).text("Thank you for your business!", 50, footerY);
+
+    doc.fontSize(10).font("Helvetica");
     doc.text(
-      "For questions about this invoice, please contact us.",
+      options.footerMessage || "Thank you for your business!",
+      50,
+      footerY
+    );
+    doc.text(
+      "For questions about this invoice, please contact us at:",
       50,
       footerY + 15
     );
+    doc.text(
+      `${this.companyInfo.phone} or ${this.companyInfo.email}`,
+      50,
+      footerY + 30
+    );
 
-    if (config.website) {
-      doc.text(`Visit us: ${config.website}`, 50, footerY + 30);
+    // Add payment terms if specified
+    if (options.paymentTerms) {
+      doc.text(`Payment Terms: ${options.paymentTerms}`, 50, footerY + 45);
     }
   }
 
   /**
-   * Utility methods
+   * Generate PDF buffer instead of file
+   * @param {Object} order - Order object
+   * @param {string} type - PDF type ('invoice', 'receipt', 'confirmation')
+   * @param {Object} options - Generation options
+   * @returns {Promise<Buffer>} - PDF buffer
    */
+  async generateBuffer(order, type = "invoice", options = {}) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50, size: "A4" });
+        const chunks = [];
+
+        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("error", reject);
+
+        // Generate content based on type
+        switch (type) {
+          case "receipt":
+            this.buildReceiptContent(doc, order, options);
+            break;
+          case "confirmation":
+            this.buildOrderConfirmationContent(doc, order, options);
+            break;
+          case "invoice":
+          default:
+            this.buildInvoiceContent(doc, order, options);
+            break;
+        }
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Utility methods
   ensureTempDirectory() {
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true });
@@ -558,7 +557,7 @@ class PDFService {
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`PDF cleaned up: ${filePath}`);
+        console.log(`PDF cleanup: ${path.basename(filePath)}`);
       }
     } catch (error) {
       console.error(`Failed to cleanup PDF ${filePath}:`, error);
@@ -577,36 +576,26 @@ class PDFService {
   }
 
   /**
-   * Generate multiple PDF types at once
+   * Batch cleanup of old temp files
+   * @param {number} maxAgeHours - Max age of files to keep (default 24 hours)
    */
-  async generateMultiple(order, types = ["invoice"], options = {}) {
-    const results = {};
+  cleanupOldFiles(maxAgeHours = 24) {
+    try {
+      const files = fs.readdirSync(this.tempDir);
+      const now = Date.now();
+      const maxAge = maxAgeHours * 60 * 60 * 1000;
 
-    for (const type of types) {
-      try {
-        switch (type) {
-          case "invoice":
-            results.invoice = await this.generateInvoice(order, options);
-            break;
-          case "receipt":
-            results.receipt = await this.generateReceipt(order, options);
-            break;
-          case "confirmation":
-            results.confirmation = await this.generateOrderConfirmation(
-              order,
-              options
-            );
-            break;
-          default:
-            console.warn(`Unknown PDF type: ${type}`);
+      files.forEach((file) => {
+        const filePath = path.join(this.tempDir, file);
+        const stats = fs.statSync(filePath);
+
+        if (now - stats.mtime.getTime() > maxAge) {
+          this.cleanupFile(filePath);
         }
-      } catch (error) {
-        console.error(`Error generating ${type}:`, error);
-        results[type] = { error: error.message };
-      }
+      });
+    } catch (error) {
+      console.error("Error during batch cleanup:", error);
     }
-
-    return results;
   }
 }
 

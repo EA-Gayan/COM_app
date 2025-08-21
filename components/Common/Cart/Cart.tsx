@@ -46,9 +46,20 @@ const Cart = (props: CartProps) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Order response:", data);
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Order creation failed");
+
+          // Convert response to blob (PDF)
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+
+          // Trigger download
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `invoice.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
 
           // Clear cart after order is placed
           handleClearAll();
