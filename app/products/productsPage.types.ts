@@ -5,7 +5,7 @@ export interface Product {
   sellingPrice: number;
   category: string;
   imageUrl?: string;
-  availableQty: number;
+  stockQty: number;
 }
 
 export interface Pagination {

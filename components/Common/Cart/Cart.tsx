@@ -63,6 +63,8 @@ const Cart = (props: CartProps) => {
 
           // Clear cart after order is placed
           handleClearAll();
+
+          props.onOrderComplete?.();
         })
         .catch((err) => console.error(err));
     }

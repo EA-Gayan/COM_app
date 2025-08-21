@@ -14,4 +14,5 @@ export interface CartProps {
   total: number;
   onRemoveItem: (id: number) => void;
   onClearAll: () => void;
+  onOrderComplete: () => void;
 }

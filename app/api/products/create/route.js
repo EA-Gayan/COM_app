@@ -95,7 +95,7 @@ async function createProductHandler(request) {
       sellingPrice: parseFloat(sellingPrice),
       category: category.trim(),
       stockQty: stockQty || 0,
-      availableQty: stockQty,
+      initialQty: stockQty,
       sName: sName.trim(),
     });
 
