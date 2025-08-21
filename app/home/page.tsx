@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Cart from "@/components/Common/Cart/Cart";
 import { CartItem } from "@/components/Common/Cart/Cart.types";
-import { prodctsProps, productPageProps } from "./homePage.types";
+import { prodctsProps } from "./homePage.types";
 import Nav from "@/components/Helper/Navbar/Nav";
 
 const Home = () => {
@@ -14,37 +14,32 @@ const Home = () => {
   const [searchText, setSearchText] = useState("");
   const [pageName, setPageName] = useState("");
 
-  useEffect(() => {
-    const getProducts = async () => {
-      try {
-        const response = await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            page: 1,
-            limit: 10,
-            searchText,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.success && result.data) {
-          setProducts(result.data.products);
-        } else {
-          console.error("Failed to fetch products:", result.message);
-          setProducts([]);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
+  // Fetch products
+  const getProducts = async () => {
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: 1, limit: 10, searchText }),
+      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        setProducts(result.data.products);
+      } else {
+        console.error("Failed to fetch products:", result.message);
         setProducts([]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    }
+  };
 
+  useEffect(() => {
     getProducts();
   }, [searchText]);
 
-  // Add product to cart or increase quantity (respecting stock)
+  // Add product to cart or increase quantity
   const handleAddToCart = (product: {
     productId: number;
     name: string;
@@ -56,7 +51,6 @@ const Home = () => {
         (item) => item.productId === product.productId
       );
 
-      // Find product stock
       const productInList = products.find(
         (p) => p.productId === product.productId
       );
@@ -70,7 +64,7 @@ const Home = () => {
               : item
           );
         } else {
-          return prev; // do nothing if stock reached
+          return prev;
         }
       } else {
         if (stockQty > 0) {
@@ -81,14 +75,25 @@ const Home = () => {
     });
   };
 
-  // Remove single item from cart
   const handleRemoveItem = (id: number) => {
     setCart((prev) => prev.filter((item) => item.productId !== id));
   };
 
-  // Clear all items from cart
   const handleClearAll = () => {
     setCart([]);
+  };
+
+  // Update product stock after order
+  const handleUpdateStockAfterOrder = () => {
+    setProducts((prevProducts) =>
+      prevProducts.map((p) => {
+        const cartItem = cart.find((c) => c.productId === p.productId);
+        if (cartItem) {
+          return { ...p, stockQty: p.stockQty - cartItem.quantity };
+        }
+        return p;
+      })
+    );
   };
 
   // Calculate totals
@@ -102,7 +107,6 @@ const Home = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Top Navbar */}
       <div className="sticky top-0 z-10">
         <Nav
           showSearch={true}
@@ -111,9 +115,7 @@ const Home = () => {
         />
       </div>
 
-      {/* Content Area */}
       <div className="flex flex-1 gap-6 p-6 overflow-hidden">
-        {/* Left Side - Products */}
         <div className="flex-1 h-full overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => {
@@ -155,7 +157,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Right Side - Cart */}
         <div className="w-72 bg-gray-100 p-6 rounded-2xl shadow flex flex-col">
           <Cart
             items={cart}
@@ -164,6 +165,7 @@ const Home = () => {
             total={total}
             onRemoveItem={handleRemoveItem}
             onClearAll={handleClearAll}
+            onOrderComplete={handleUpdateStockAfterOrder} // <-- NEW
           />
         </div>
       </div>

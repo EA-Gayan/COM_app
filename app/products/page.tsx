@@ -79,7 +79,7 @@ const ProductsPage = () => {
                 description={product.description}
                 price={product.sellingPrice}
                 imageUrl={product.imageUrl}
-                availableQty={product.availableQty}
+                availableQty={product.stockQty}
               />
             ))}
           </div>
