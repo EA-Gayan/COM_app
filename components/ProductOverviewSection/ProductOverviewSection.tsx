@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
+import { ProductOverviewSectionProps } from "./ProductOverviewSection.types";
 
-const ProductOverviewSection = () => {
+const ProductOverviewSection = (props: ProductOverviewSectionProps) => {
   const [searchText, setSearchText] = useState("");
   const [pageName, setPageName] = useState("");
   const [startDate, setStartDate] = useState("");

@@ -1,35 +1,32 @@
 "use client";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
-  Line,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
-const OrderOverviewSection = () => {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [includeDiscounted, setIncludeDiscounted] = useState(false);
-  const [includeReturns, setIncludeReturns] = useState(false);
-  // Sample data for charts
-  const revenueData = [
-    { day: "Sun", thisWeek: 8, lastWeek: 6 },
-    { day: "Mon", thisWeek: 9, lastWeek: 7 },
-    { day: "Tue", thisWeek: 8, lastWeek: 6 },
-    { day: "Wed", thisWeek: 7, lastWeek: 5 },
-    { day: "Thu", thisWeek: 6, lastWeek: 4 },
-    { day: "Fri", thisWeek: 8, lastWeek: 6 },
-    { day: "Sat", thisWeek: 7, lastWeek: 5 },
-  ];
+import {
+  FilterRequest,
+  filters,
+  FilterType,
+  OrderOverviewSectionProps,
+} from "./OrderOverviewSection.types";
+
+const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
+  const [activeFilter, setActiveFilter] = useState("TODAY");
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
+  // data for chart
+  const revenueData = props.responseData?.barChartData;
 
   const ordersClassification = [
     { name: "Cashier", value: 50, orders: 187, color: "#6366f1" },
@@ -91,34 +88,83 @@ const OrderOverviewSection = () => {
     },
   ];
 
+  const applyFilter = (filterType: FilterType) => {
+    const payload: FilterRequest = { filterType };
+    if (filterType === "FROM_TO") {
+      payload.fromDate = fromDate;
+      payload.toDate = toDate;
+    }
+    props.ordersOverviewRequestPayload(payload);
+  };
+
+  console.log(props.responseData);
   return (
     <section className="space-y-6">
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Orders Overview</h1>
           <div className="flex space-x-2">
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50">
-              TODAY
-            </button>
-            <button className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-              THIS WEEK
-            </button>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50">
-              THIS MONTH
-            </button>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50">
-              THIS QUARTER
-            </button>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50">
-              THIS YEAR
-            </button>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50">
-              FROM/TO
-            </button>
+            {filters.map((filter) => (
+              <button
+                key={filter.value}
+                className={`px-4 py-2 text-sm rounded-md border ${
+                  activeFilter === filter.value
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700 border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                }`}
+                onClick={() => {
+                  setActiveFilter(filter.value);
+                  if (filter.value === "FROM_TO") {
+                    setShowDatePicker(!showDatePicker);
+                  } else {
+                    applyFilter(filter.value);
+                    setShowDatePicker(false);
+                  }
+                }}
+              >
+                {filter.label}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
 
+        {/* FROM/TO Date Picker */}
+        {showDatePicker && activeFilter === "FROM_TO" && (
+          <div className="mt-4 flex space-x-2 items-center">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                From:
+              </label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="mt-1 px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                To:
+              </label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="mt-1 px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <button
+              onClick={() => {
+                applyFilter("FROM_TO");
+                setShowDatePicker(false);
+              }}
+              className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              Apply
+            </button>
+          </div>
+        )}
+      </div>
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Chart */}
@@ -164,18 +210,16 @@ const OrderOverviewSection = () => {
             </h3>
             <div className="flex items-baseline justify-between">
               <span className="text-3xl font-bold text-gray-900">374</span>
-              <span className="text-green-600 text-sm font-medium">
-                ↑ 13.8%
-              </span>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">This week</span>
-                <span className="font-medium">374</span>
+                <span className="text-green-600 text-sm font-medium">
+                  ↑ 13.8%
+                </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Last week</span>
-                <span className="font-medium">291</span>
+                <span className="text-gray-600">This week</span>
+                <span className="font-medium">15 SAR</span>
               </div>
             </div>
           </div>

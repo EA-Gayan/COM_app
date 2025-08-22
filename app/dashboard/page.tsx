@@ -1,37 +1,75 @@
 "use client";
 import Nav from "@/components/Helper/Navbar/Nav";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import ProductOverviewSection from "../../components/ProductOverviewSection/ProductOverviewSection";
 import OrderOverviewSection from "@/components/OrderOverviewSection/OrderOverviewSection";
+import { FilterRequest } from "@/components/OrderOverviewSection/OrderOverviewSection.types";
+import Spinner from "@/components/Common/Spinner/Spinner";
+import { dashboardResponseData } from "./dashboardPage.types";
 
 const DashboardPage = () => {
   const [searchText, setSearchText] = useState("");
-  const [pageName, setPageName] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [requestPayload, setRequestPayload] = useState<FilterRequest | null>({
+    filterType: "TODAY",
+  });
+  const [responseData, setResponseData] =
+    useState<dashboardResponseData | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // number of products per page
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await fetch("/api/dashboard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestPayload),
+      });
+
+      const data = await res.json();
+      setResponseData(data.data);
+
+      if (!data.success) throw new Error(data.message || "Failed to fetch");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [requestPayload]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       {/* Top Navbar */}
       <div className="sticky top-0 z-10 shadow-md bg-white">
-        <Nav
-          showSearch={false}
-          onSearchChange={(val) => setSearchText(val)}
-          pageType={setPageName}
-        />
+        <Nav showSearch={false} onSearchChange={(val) => setSearchText(val)} />
       </div>
 
-      {/* Dashboard Content */}
-      <div className="flex-1 p-6 overflow-auto">
-        {/* orders overview section */}
-        <OrderOverviewSection />
+      {loading ? (
+        <Spinner />
+      ) : (
+        <>
+          {/* Dashboard Content */}
+          <div className="flex-1 p-6 overflow-auto">
+            {/* orders overview section */}
+            <OrderOverviewSection
+              ordersOverviewRequestPayload={setRequestPayload}
+              responseData={responseData}
+            />
 
-        {/* Products Overview Section */}
-
-        <ProductOverviewSection />
-      </div>
+            {/* Products Overview Section */}
+            <ProductOverviewSection responseData={responseData} />
+          </div>
+        </>
+      )}
     </div>
   );
 };
