@@ -18,6 +18,7 @@ import {
   FilterType,
   OrderOverviewSectionProps,
 } from "./OrderOverviewSection.types";
+import { StatusEnum } from "../Common/enums/common_enums";
 
 const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
   const [activeFilter, setActiveFilter] = useState("TODAY");
@@ -97,13 +98,13 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
     props.ordersOverviewRequestPayload(payload);
   };
 
-  console.log(props.responseData);
+  console.log(activeFilter);
   return (
     <section className="space-y-6">
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Orders Overview</h1>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 relative">
             {filters.map((filter) => (
               <button
                 key={filter.value}
@@ -113,6 +114,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                     : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                 }`}
                 onClick={() => {
+                  console.log("Clicked:", filter.label);
                   setActiveFilter(filter.value);
                   if (filter.value === "FROM_TO") {
                     setShowDatePicker(!showDatePicker);
@@ -125,45 +127,64 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 {filter.label}
               </button>
             ))}
+
+            {/* Dropdown Panel */}
+            {showDatePicker && activeFilter === "FROM_TO" && (
+              <div className="absolute top-full mt-2 left-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-64 flex flex-col space-y-3">
+                <h3 className="text-md font-semibold text-gray-900 text-center">
+                  Select Date Range
+                </h3>
+
+                <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700">
+                      From:
+                    </label>
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      className="mt-1 px-2 py-1 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700">
+                      To:
+                    </label>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      className="mt-1 px-2 py-1 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    applyFilter("FROM_TO");
+                    setShowDatePicker(false);
+                  }}
+                  disabled={!fromDate || !toDate}
+                  className={`px-4 py-2 text-sm rounded-md text-white w-full ${
+                    fromDate && toDate
+                      ? "bg-indigo-600 hover:bg-indigo-700"
+                      : "bg-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  Apply
+                </button>
+
+                <button
+                  onClick={() => setShowDatePicker(false)}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* FROM/TO Date Picker */}
-        {showDatePicker && activeFilter === "FROM_TO" && (
-          <div className="mt-4 flex space-x-2 items-center">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                From:
-              </label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="mt-1 px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                To:
-              </label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="mt-1 px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <button
-              onClick={() => {
-                applyFilter("FROM_TO");
-                setShowDatePicker(false);
-              }}
-              className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            >
-              Apply
-            </button>
-          </div>
-        )}
       </div>
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -171,9 +192,24 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue</h3>
           <div className="flex items-baseline space-x-4 mb-6">
-            <span className="text-3xl font-bold text-gray-900">40,200</span>
+            <span className="text-3xl font-bold text-gray-900">
+              {props?.responseData?.totalIncome}
+            </span>
             <span className="text-sm text-gray-500">SAR</span>
-            <span className="text-green-600 text-sm font-medium">↑ 13.8%</span>
+            <span className="text-green-600 text-sm font-medium">
+              {props.responseData?.incomePercentage !== undefined && (
+                <span
+                  className={`text-sm font-medium ${
+                    props.responseData.ordersPercentage >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {props.responseData.incomePercentage >= 0 ? "↑" : "↓"}{" "}
+                  {Math.abs(props.responseData.incomePercentage)}%
+                </span>
+              )}
+            </span>
           </div>
           <div className="flex items-center space-x-4 mb-4 text-sm">
             <div className="flex items-center space-x-2">
@@ -191,11 +227,10 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
+                <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="thisWeek" fill="#6366f1" />
-                <Bar dataKey="lastWeek" fill="#fbbf24" />
+                <Bar dataKey="value" fill="#6366f1" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -209,12 +244,25 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
               Total Orders
             </h3>
             <div className="flex items-baseline justify-between">
-              <span className="text-3xl font-bold text-gray-900">374</span>
+              <span className="text-3xl font-bold text-gray-900">
+                {props.responseData?.totalOrders}
+              </span>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-green-600 text-sm font-medium">
-                  ↑ 13.8%
+                  {props.responseData?.ordersPercentage !== undefined && (
+                    <span
+                      className={`text-sm font-medium ${
+                        props.responseData.ordersPercentage >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {props.responseData.ordersPercentage >= 0 ? "↑" : "↓"}{" "}
+                      {Math.abs(props.responseData.ordersPercentage)}%
+                    </span>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
@@ -231,7 +279,9 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
             </h3>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-3xl font-bold text-gray-900">15</span>
+                <span className="text-3xl font-bold text-gray-900">
+                  {props.responseData?.avgOrderValue}
+                </span>
                 <span className="text-sm text-gray-500 ml-1">SAR</span>
               </div>
               <span className="text-red-600 text-sm font-medium">↓ 2%</span>
@@ -530,66 +580,35 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              <tr className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  #12345
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  Ahmed Al-Rashid
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  2x Margherita Pizza, 1x Caesar Salad
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  85 SAR
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    Completed
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">2:30 PM</td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  #12346
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  Sarah Mohammed
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  1x Pepperoni Pizza, 2x Garlic Bread
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  65 SAR
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                    Preparing
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">2:45 PM</td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  #12347
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">Omar Hassan</td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  3x Vegetarian Pizza
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  120 SAR
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    Out for Delivery
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">3:00 PM</td>
-              </tr>
-            </tbody>
+            {props.responseData?.orderList.map((i) => (
+              <tbody key={i._id} className="divide-y divide-gray-200">
+                <tr className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    {i?.orderId}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {i.customerDetails.name !== ""
+                      ? i.customerDetails.name
+                      : "-"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {i.items.map((x) => x.name).join(", ")}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {i.bills.total}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                      {StatusEnum[i.orderStatus]}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {i.createdAt}
+                  </td>
+                </tr>
+              </tbody>
+            ))}
           </table>
         </div>
       </div>
