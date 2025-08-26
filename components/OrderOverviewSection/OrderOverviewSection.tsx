@@ -195,7 +195,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
             <span className="text-3xl font-bold text-gray-900">
               {props?.responseData?.totalIncome}
             </span>
-            <span className="text-sm text-gray-500">SAR</span>
+            <span className="text-sm text-gray-500">Rs</span>
             <span className="text-green-600 text-sm font-medium">
               {props.responseData?.incomePercentage !== undefined && (
                 <span
@@ -250,7 +250,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-green-600 text-sm font-medium">
+                <span className="text-sm font-medium">
                   {props.responseData?.ordersPercentage !== undefined && (
                     <span
                       className={`text-sm font-medium ${
@@ -265,10 +265,6 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                   )}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">This week</span>
-                <span className="font-medium">15 SAR</span>
-              </div>
             </div>
           </div>
 
@@ -282,18 +278,25 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 <span className="text-3xl font-bold text-gray-900">
                   {props.responseData?.avgOrderValue}
                 </span>
-                <span className="text-sm text-gray-500 ml-1">SAR</span>
+                <span className="text-sm text-gray-500 ml-1">Rs</span>
               </div>
-              <span className="text-red-600 text-sm font-medium">↓ 2%</span>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">This week</span>
-                <span className="font-medium">15 SAR</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Last week</span>
-                <span className="font-medium">16 SAR</span>
+                <span className="text-sm font-medium">
+                  {props.responseData?.ordersPercentage !== undefined && (
+                    <span
+                      className={`text-sm font-medium ${
+                        props.responseData.ordersPercentage >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {props.responseData.ordersPercentage >= 0 ? "↑" : "↓"}{" "}
+                      {Math.abs(props.responseData.ordersPercentage)}%
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -446,21 +449,21 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Best Sellers
+              Best Selling Items
             </h3>
-            <select className="text-sm border border-gray-300 rounded px-2 py-1">
+            {/* <select className="text-sm border border-gray-300 rounded px-2 py-1">
               <option>Category</option>
-            </select>
+            </select> */}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    MENU ITEM
+                    PRODUCT NAME
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    GROWTH
+                    TOTAL SOLD QTY
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
                     REVENUE
@@ -468,26 +471,23 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {bestSellersData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                {props.responseData?.bestSellingProducts.map((item) => (
+                  <tr key={item.productId} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div>
-                        <div className="font-medium text-gray-900">
-                          {item.item}
-                        </div>
                         <div className="text-sm text-gray-500">
-                          {item.category}
+                          {item.productName}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-green-600 font-medium">
-                        {item.growth}
+                        {item.totalSoldQty}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-medium text-gray-900">
-                        {item.revenue}
+                        {item.totalRevenue}
                       </span>
                     </td>
                   </tr>
@@ -500,20 +500,22 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         {/* Slow Items */}
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Slow Items</h3>
-            <select className="text-sm border border-gray-300 rounded px-2 py-1">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Least Selling Items
+            </h3>
+            {/* <select className="text-sm border border-gray-300 rounded px-2 py-1">
               <option>Category</option>
-            </select>
+            </select> */}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    MENU ITEM
+                    PRODUCT NAME
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    GROWTH
+                    TOTAL SOLD QTY
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
                     REVENUE
@@ -521,26 +523,21 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {slowItemsData.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
+                {props.responseData?.leastSellingProducts.map((item) => (
+                  <tr key={item.productId} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div>
                         <div className="font-medium text-gray-900">
-                          {item.item}
+                          {item.productName}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {item.category}
+                          {item.totalSoldQty}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-red-600 font-medium">
-                        {item.growth}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-gray-900">
-                        {item.revenue}
+                        {item.totalRevenue}
                       </span>
                     </td>
                   </tr>
