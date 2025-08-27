@@ -1,5 +1,19 @@
 import { OrderProps } from "../orders/orderPage.types";
 
+interface bestSellingProducts {
+  productId: string;
+  productName: string;
+  totalSoldQty: number;
+  totalRevenue: number;
+}
+
+interface leastSellingProducts {
+  productId: string;
+  productName: string;
+  totalSoldQty: number;
+  totalRevenue: number;
+}
+
 export interface dashboardResponseData {
   totalOrders: number;
   totalIncome: number;
@@ -10,7 +24,7 @@ export interface dashboardResponseData {
   dateWiseIncome: [];
   barChartData: [];
   productWiseProfit: [];
-  bestSellingProducts: [];
-  leastSellingProducts: [];
+  bestSellingProducts: bestSellingProducts[];
+  leastSellingProducts: leastSellingProducts[];
   allProducts: [];
 }
