@@ -41,33 +41,6 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
     { name: "Third", value: 25, amount: "1425 SAR", color: "#10b981" },
   ];
 
-  const bestSellersData = [
-    {
-      item: "Margherita Pizza",
-      category: "Pizza",
-      growth: "+15%",
-      revenue: "2,500 SAR",
-    },
-    {
-      item: "Pepperoni Pizza",
-      category: "Pizza",
-      growth: "+12%",
-      revenue: "2,200 SAR",
-    },
-    {
-      item: "Caesar Salad",
-      category: "Salad",
-      growth: "+8%",
-      revenue: "1,800 SAR",
-    },
-    {
-      item: "Garlic Bread",
-      category: "Sides",
-      growth: "+5%",
-      revenue: "1,200 SAR",
-    },
-  ];
-
   const slowItemsData = [
     {
       item: "Vegetarian Pizza",
@@ -98,7 +71,6 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
     props.ordersOverviewRequestPayload(payload);
   };
 
-  console.log(activeFilter);
   return (
     <section className="space-y-6">
       <div className="mb-6">
@@ -114,13 +86,13 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                     : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                 }`}
                 onClick={() => {
-                  console.log("Clicked:", filter.label);
-                  setActiveFilter(filter.value);
                   if (filter.value === "FROM_TO") {
+                    setActiveFilter("FROM_TO");
                     setShowDatePicker(!showDatePicker);
                   } else {
-                    applyFilter(filter.value);
+                    setActiveFilter(filter.value);
                     setShowDatePicker(false);
+                    applyFilter(filter.value);
                   }
                 }}
               >
@@ -214,14 +186,17 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
           <div className="flex items-center space-x-4 mb-4 text-sm">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-indigo-600 rounded-sm"></div>
-              <span>This week (so far)</span>
-              <span className="font-medium">40K SAR</span>
+              <span>{activeFilter} (so far)</span>
+              <span className="font-medium">
+                {props?.responseData?.totalIncome}
+                Rs
+              </span>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-yellow-400 rounded-sm"></div>
               <span>Last week</span>
               <span className="font-medium">32K SAR</span>
-            </div>
+            </div> */}
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -276,7 +251,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
             <div className="flex items-baseline justify-between">
               <div>
                 <span className="text-3xl font-bold text-gray-900">
-                  {props.responseData?.avgOrderValue}
+                  {Number(props.responseData?.avgOrderValue).toFixed(2)}
                 </span>
                 <span className="text-sm text-gray-500 ml-1">Rs</span>
               </div>
@@ -530,10 +505,12 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                         <div className="font-medium text-gray-900">
                           {item.productName}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {item.totalSoldQty}
-                        </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-gray-900">
+                        {item.totalSoldQty}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-red-600 font-medium">

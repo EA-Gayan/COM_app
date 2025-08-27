@@ -1,4 +1,5 @@
 import { OrderProps } from "../orders/orderPage.types";
+import { Product } from "../products/productsPage.types";
 
 interface bestSellingProducts {
   productId: string;
@@ -26,5 +27,5 @@ export interface dashboardResponseData {
   productWiseProfit: [];
   bestSellingProducts: bestSellingProducts[];
   leastSellingProducts: leastSellingProducts[];
-  allProducts: [];
+  allProducts: Product[];
 }
