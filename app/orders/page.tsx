@@ -93,11 +93,7 @@ const OrdersPage = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
-        <Nav
-          showSearch={true}
-          onSearchChange={(val) => setSearchText(val)}
-          pageType={setPageName}
-        />
+        <Nav showSearch={true} onSearchChange={(val) => setSearchText(val)} />
       </div>
 
       {/* Orders Area */}

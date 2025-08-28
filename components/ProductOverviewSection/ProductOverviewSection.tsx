@@ -75,15 +75,15 @@ const ProductOverviewSection = (props: ProductOverviewSectionProps) => {
                     CATEGORY
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    SALES
+                    SALING PRICE
                   </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                    REVENUE
+                    STOCK QTY
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentProducts.map((item, index) => (
+                {props.responseData?.allProducts.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {item.name}
@@ -91,8 +91,12 @@ const ProductOverviewSection = (props: ProductOverviewSectionProps) => {
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {item.category}
                     </td>
-                    <td className="px-4 py-3 font-medium">{item.sales}</td>
-                    <td className="px-4 py-3 font-medium">{item.revenue}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {item.sellingPrice}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-red-600">
+                      {item.stockQty}
+                    </td>
                   </tr>
                 ))}
               </tbody>

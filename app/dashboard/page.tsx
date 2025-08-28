@@ -12,9 +12,11 @@ const DashboardPage = () => {
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [requestPayload, setRequestPayload] = useState<FilterRequest | null>({
-    filterType: "TODAY",
-  });
+  const [orderRequestPayload, setOrderRequestPayload] =
+    useState<FilterRequest | null>({
+      filterType: "TODAY",
+    });
+  const [productRequestPayload, setProductRequestPayload] = useState({});
   const [responseData, setResponseData] =
     useState<dashboardResponseData | null>(null);
 
@@ -28,7 +30,7 @@ const DashboardPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestPayload),
+        body: JSON.stringify(orderRequestPayload),
       });
 
       const data = await res.json();
@@ -44,7 +46,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [requestPayload]);
+  }, [orderRequestPayload]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
@@ -61,12 +63,15 @@ const DashboardPage = () => {
           <div className="flex-1 p-6 overflow-auto">
             {/* orders overview section */}
             <OrderOverviewSection
-              ordersOverviewRequestPayload={setRequestPayload}
+              ordersOverviewRequestPayload={setOrderRequestPayload}
               responseData={responseData}
             />
 
             {/* Products Overview Section */}
-            <ProductOverviewSection responseData={responseData} />
+            <ProductOverviewSection
+              productOverviewRequestPayload={setProductRequestPayload}
+              responseData={responseData}
+            />
           </div>
         </>
       )}
