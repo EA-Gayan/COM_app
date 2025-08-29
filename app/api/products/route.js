@@ -5,6 +5,7 @@ import { withApiAuth } from "../../../lib/authMiddleware";
 
 // Export protected route handler
 export const POST = withApiAuth(getProductsHandler);
+const categoryList = ["Test1", "Test2", "Test3", "Test4"];
 
 // POST - Retrieve products with optional name search and optional pagination
 async function getProductsHandler(request) {
@@ -55,6 +56,7 @@ async function getProductsHandler(request) {
       data: {
         products,
         pagination,
+        categoryList,
       },
     });
   } catch (error) {

@@ -119,16 +119,27 @@ async function getOrdersStatsHandler(request) {
       0
     );
 
-    // --- Percentages ---
-    const ordersPercentage =
-      prevTotalOrders > 0
-        ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100
-        : 100;
+    // --- Fixed Percentages ---
+    let ordersPercentage;
+    let incomePercentage;
 
-    const incomePercentage =
-      prevTotalIncome > 0
-        ? ((totalIncome - prevTotalIncome) / prevTotalIncome) * 100
-        : 100;
+    if (prevTotalOrders === 0) {
+      // If previous period had 0 orders
+      ordersPercentage = totalOrders > 0 ? 100 : 0;
+    } else {
+      // Normal percentage calculation
+      ordersPercentage =
+        ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100;
+    }
+
+    if (prevTotalIncome === 0) {
+      // If previous period had 0 income
+      incomePercentage = totalIncome > 0 ? 100 : 0;
+    } else {
+      // Normal percentage calculation
+      incomePercentage =
+        ((totalIncome - prevTotalIncome) / prevTotalIncome) * 100;
+    }
 
     // --- Date-wise income aggregation ---
     const dateWiseIncomeAgg = await Order.aggregate([
@@ -382,6 +393,122 @@ async function getOrdersStatsHandler(request) {
       { $limit: 10 },
     ]);
 
+    // --- PIE CHART DATA ---
+
+    // Product Category Revenue Distribution
+    const categoryRevenuePieChart = await Order.aggregate([
+      { $match: { orderDate: { $gte: start, $lt: end } } },
+      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.productId",
+          foreignField: "productId",
+          as: "productInfo",
+        },
+      },
+      { $unwind: "$productInfo" },
+      {
+        $group: {
+          _id: "$productInfo.category",
+          totalRevenue: {
+            $sum: { $multiply: ["$items.quantity", "$items.price"] },
+          },
+          totalQuantity: { $sum: "$items.quantity" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          label: "$_id",
+          value: "$totalRevenue",
+          quantity: "$totalQuantity",
+          percentage: {
+            $round: [
+              { $multiply: [{ $divide: ["$totalRevenue", totalIncome] }, 100] },
+              2,
+            ],
+          },
+        },
+      },
+      { $sort: { value: -1 } },
+    ]);
+
+    // Top Products Revenue Distribution (Top 8 products + Others)
+    const topProductsRevenue = await Order.aggregate([
+      { $match: { orderDate: { $gte: start, $lt: end } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.productId",
+          productName: { $first: "$items.name" },
+          totalRevenue: {
+            $sum: { $multiply: ["$items.quantity", "$items.price"] },
+          },
+          totalQuantity: { $sum: "$items.quantity" },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+
+    // Take top 8 products and group the rest as "Others"
+    const top8Products = topProductsRevenue.slice(0, 8);
+    const otherProductsRevenue = topProductsRevenue
+      .slice(8)
+      .reduce((sum, product) => sum + product.totalRevenue, 0);
+
+    const productRevenuePieChart = top8Products.map((product) => ({
+      label: product.productName,
+      value: product.totalRevenue,
+      quantity: product.totalQuantity,
+      percentage:
+        Math.round((product.totalRevenue / totalIncome) * 100 * 100) / 100,
+    }));
+
+    if (otherProductsRevenue > 0) {
+      productRevenuePieChart.push({
+        label: "Others",
+        value: otherProductsRevenue,
+        quantity: topProductsRevenue
+          .slice(8)
+          .reduce((sum, product) => sum + product.totalQuantity, 0),
+        percentage:
+          Math.round((otherProductsRevenue / totalIncome) * 100 * 100) / 100,
+      });
+    }
+
+    // Order Value Range Distribution
+    const orderValueRanges = [
+      { min: 0, max: 50, label: "Rs 0 - Rs 50" },
+      { min: 51, max: 100, label: "Rs 51 - Rs 100" },
+      { min: 101, max: 200, label: "Rs 101 - Rs 200" },
+      { min: 201, max: 500, label: "Rs 201 - Rs 500" },
+      { min: 501, max: Infinity, label: "Rs 500+" },
+    ];
+
+    const orderValuePieChart = orderValueRanges
+      .map((range) => {
+        const ordersInRange = orders.filter((order) => {
+          const total = order.bills?.total || 0;
+          return total >= range.min && total <= range.max;
+        });
+
+        return {
+          label: range.label,
+          value: ordersInRange.length,
+          totalValue: ordersInRange.reduce(
+            (sum, order) => sum + (order.bills?.total || 0),
+            0
+          ),
+          percentage:
+            totalOrders > 0
+              ? Math.round((ordersInRange.length / totalOrders) * 100 * 100) /
+                100
+              : 0,
+        };
+      })
+      .filter((range) => range.value > 0); // Only include ranges with orders
+
     const allProducts = await Product.find().sort({ name: 1 });
 
     return NextResponse.json({
@@ -391,15 +518,20 @@ async function getOrdersStatsHandler(request) {
         totalOrders,
         totalIncome,
         avgOrderValue,
-        ordersPercentage,
-        incomePercentage,
+        ordersPercentage: Math.round(ordersPercentage * 100) / 100, // Round to 2 decimal places
+        incomePercentage: Math.round(incomePercentage * 100) / 100, // Round to 2 decimal places
         orderList: orders,
         dateWiseIncome: dateWiseIncomeAgg,
-        barChartData, // <= this is ready for your bar chart
+        barChartData,
         productWiseProfit: productProfitAgg,
         bestSellingProducts: bestSellingAgg,
         leastSellingProducts: leastSellingAgg,
         allProducts,
+        pieChartData: {
+          categoryRevenue: categoryRevenuePieChart,
+          productRevenue: productRevenuePieChart,
+          orderValueRanges: orderValuePieChart,
+        },
       },
     });
   } catch (error) {

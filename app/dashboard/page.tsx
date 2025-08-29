@@ -65,7 +65,7 @@ const DashboardPage = () => {
       ) : (
         <>
           {/* Dashboard Content */}
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 p-6 overflow-auto pb-10">
             {/* orders overview section */}
             <OrderOverviewSection
               ordersOverviewRequestPayload={setOrderRequestPayload}
@@ -75,10 +75,10 @@ const DashboardPage = () => {
             />
 
             {/* Products Overview Section */}
-            <ProductOverviewSection
+            {/* <ProductOverviewSection
               productOverviewRequestPayload={setProductRequestPayload}
               responseData={responseData}
-            />
+            /> */}
           </div>
         </>
       )}

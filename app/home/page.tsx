@@ -108,11 +108,7 @@ const Home = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
-        <Nav
-          showSearch={true}
-          onSearchChange={(val) => setSearchText(val)}
-          pageType={setPageName}
-        />
+        <Nav showSearch={true} onSearchChange={(val) => setSearchText(val)} />
       </div>
 
       <div className="flex flex-1 gap-6 p-6 overflow-hidden">
