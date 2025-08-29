@@ -12,16 +12,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { StatusEnum } from "../Common/enums/common_enums";
 import {
   FilterRequest,
   filters,
   FilterType,
   OrderOverviewSectionProps,
 } from "./OrderOverviewSection.types";
-import { StatusEnum } from "../Common/enums/common_enums";
 
 const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
-  const [activeFilter, setActiveFilter] = useState("TODAY");
+  const [activeFilter, setActiveFilter] = useState<FilterType>();
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
@@ -29,17 +29,25 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
   // data for chart
   const revenueData = props.responseData?.barChartData;
 
-  const ordersClassification = [
-    { name: "Cashier", value: 50, orders: 187, color: "#6366f1" },
-    { name: "Delivery", value: 25, orders: 94, color: "#fbbf24" },
-    { name: "Cancelled", value: 25, orders: 93, color: "#10b981" },
-  ];
+  useEffect(() => {
+    setActiveFilter(props.filterType);
+  }, []);
 
-  const shiftsData = [
-    { name: "First", value: 50, amount: "2850 SAR", color: "#fbbf24" },
-    { name: "Second", value: 25, amount: "1425 SAR", color: "#6366f1" },
-    { name: "Third", value: 25, amount: "1425 SAR", color: "#10b981" },
-  ];
+  const orderValueRanges =
+    props.responseData?.pieChartData.orderValueRanges.map((item, index) => ({
+      name: item.label,
+      value: item.percentage, // or `item.value` depending on what you want charted
+      orders: item.totalValue, // comes from API
+      color: ["#6366f1", "#fbbf24", "#10b981", "#ef4444", "#3b82f6"][index % 5], // assign colors dynamically
+    })) ?? [];
+
+  const productRevenue =
+    props.responseData?.pieChartData.productRevenue.map((item, index) => ({
+      name: item.label,
+      value: item.percentage, // or `item.value` depending on what you want charted
+      orders: item.quantity, // comes from API
+      color: ["#6366f1", "#fbbf24", "#10b981", "#ef4444", "#3b82f6"][index % 5],
+    })) ?? [];
 
   const slowItemsData = [
     {
@@ -68,6 +76,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
       payload.fromDate = fromDate;
       payload.toDate = toDate;
     }
+    props.setActiveFilter(filterType);
     props.ordersOverviewRequestPayload(payload);
   };
 
@@ -283,39 +292,41 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         {/* Orders Classification */}
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Orders Classification
+            <h3 className="text-lg font-semibold text-gray-900 py-1">
+              Order Value Range
             </h3>
-            <select className="text-sm border border-gray-300 rounded px-2 py-1">
+            {/* <select className="text-sm border border-gray-300 rounded px-2 py-1">
               <option>Number of orders</option>
-            </select>
+            </select> */}
           </div>
           <div className="flex items-center justify-center mb-4">
             <div className="relative w-32 h-32">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={ordersClassification}
+                    data={orderValueRanges}
                     cx="50%"
                     cy="50%"
                     innerRadius={40}
                     outerRadius={60}
                     dataKey="value"
                   >
-                    {ordersClassification.map((entry, index) => (
+                    {orderValueRanges.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-2xl font-bold text-gray-900">374</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  {props.responseData?.totalOrders}
+                </span>
                 <span className="text-sm text-gray-500">Orders</span>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            {ordersClassification.map((item, index) => (
+            {orderValueRanges.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div
@@ -324,7 +335,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                   ></div>
                   <span className="text-sm text-gray-600">{item.name}</span>
                   <span className="text-sm font-medium">
-                    {item.orders} Orders
+                    {item.orders} total value
                   </span>
                 </div>
                 <span className="text-sm font-bold">{item.value}%</span>
@@ -335,38 +346,42 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
 
         {/* Shifts */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Shifts</h3>
-            <select className="text-sm border border-gray-300 rounded px-2 py-1">
+          <div className="flex items-center justify-between mb-4 py-1">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Product Revenue Range
+            </h3>
+            {/* <select className="text-sm border border-gray-300 rounded px-2 py-1">
               <option>Value</option>
-            </select>
+            </select> */}
           </div>
           <div className="flex items-center justify-center mb-4">
             <div className="relative w-32 h-32">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={shiftsData}
+                    data={productRevenue}
                     cx="50%"
                     cy="50%"
                     innerRadius={40}
                     outerRadius={60}
                     dataKey="value"
                   >
-                    {shiftsData.map((entry, index) => (
+                    {productRevenue.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-2xl font-bold text-gray-900">5700</span>
-                <span className="text-sm text-gray-500">SAR</span>
+                <span className="text-2xl font-bold text-gray-900">
+                  {props.responseData?.pieChartData.productRevenue.length}
+                </span>
+                <span className="text-sm text-gray-500">Products</span>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            {shiftsData.map((item, index) => (
+            {productRevenue.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div
@@ -374,7 +389,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                     style={{ backgroundColor: item.color }}
                   ></div>
                   <span className="text-sm text-gray-600">{item.name}</span>
-                  <span className="text-sm font-medium">{item.amount}</span>
+                  <span className="text-sm font-medium">{item.orders}</span>
                 </div>
                 <span className="text-sm font-bold">{item.value}%</span>
               </div>
@@ -392,27 +407,29 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 font-semibold text-sm">
-                    298
+                    {props.responseData?.totalOrders}
                   </span>
                 </div>
                 <span className="text-sm font-medium text-gray-700">
                   Orders
                 </span>
               </div>
-              <span className="text-sm text-gray-600">In Progress</span>
+              <span className="text-sm text-gray-600">{activeFilter}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                   <span className="text-green-600 font-semibold text-sm">
-                    76
+                    {
+                      props.responseData?.allProducts.filter(
+                        (p) => p.stockQty > 0
+                      ).length
+                    }
                   </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">
-                  Completed
-                </span>
+                <span className="text-sm font-medium text-gray-700">Items</span>
               </div>
-              <span className="text-sm text-gray-600">Today</span>
+              <span className="text-sm text-gray-600">Available</span>
             </div>
           </div>
         </div>
