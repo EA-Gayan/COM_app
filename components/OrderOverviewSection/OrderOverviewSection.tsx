@@ -21,13 +21,17 @@ import {
 import { StatusEnum } from "../Common/enums/common_enums";
 
 const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
-  const [activeFilter, setActiveFilter] = useState("TODAY");
+  const [activeFilter, setActiveFilter] = useState<FilterType>();
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
 
   // data for chart
   const revenueData = props.responseData?.barChartData;
+
+  useEffect(() => {
+    setActiveFilter(props.filterType);
+  }, []);
 
   const ordersClassification = [
     { name: "Cashier", value: 50, orders: 187, color: "#6366f1" },
@@ -68,6 +72,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
       payload.fromDate = fromDate;
       payload.toDate = toDate;
     }
+    props.setActiveFilter(filterType);
     props.ordersOverviewRequestPayload(payload);
   };
 

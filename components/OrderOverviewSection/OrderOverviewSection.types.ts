@@ -24,4 +24,6 @@ export const filters: { label: string; value: FilterType }[] = [
 export interface OrderOverviewSectionProps {
   ordersOverviewRequestPayload: (data: FilterRequest) => void;
   responseData: dashboardResponseData | null;
+  filterType: FilterType;
+  setActiveFilter: (filter: FilterType) => void;
 }

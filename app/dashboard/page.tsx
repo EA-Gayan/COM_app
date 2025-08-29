@@ -4,7 +4,10 @@ import React, { useEffect, useState } from "react";
 
 import ProductOverviewSection from "../../components/ProductOverviewSection/ProductOverviewSection";
 import OrderOverviewSection from "@/components/OrderOverviewSection/OrderOverviewSection";
-import { FilterRequest } from "@/components/OrderOverviewSection/OrderOverviewSection.types";
+import {
+  FilterRequest,
+  FilterType,
+} from "@/components/OrderOverviewSection/OrderOverviewSection.types";
 import Spinner from "@/components/Common/Spinner/Spinner";
 import { dashboardResponseData } from "./dashboardPage.types";
 
@@ -19,6 +22,8 @@ const DashboardPage = () => {
   const [productRequestPayload, setProductRequestPayload] = useState({});
   const [responseData, setResponseData] =
     useState<dashboardResponseData | null>(null);
+
+  const [activeFilter, setActiveFilter] = useState<FilterType>("TODAY");
 
   const fetchDashboardData = async () => {
     try {
@@ -65,6 +70,8 @@ const DashboardPage = () => {
             <OrderOverviewSection
               ordersOverviewRequestPayload={setOrderRequestPayload}
               responseData={responseData}
+              setActiveFilter={setActiveFilter}
+              filterType={activeFilter}
             />
 
             {/* Products Overview Section */}
