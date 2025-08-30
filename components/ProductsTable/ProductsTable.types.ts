@@ -12,6 +12,6 @@ export interface ProductsTableProps {
   products: Product[];
   pagination: Pagination | null;
   onEdit: (product: Product) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, name: string) => void;
   onPageChange: (page: number) => void;
 }

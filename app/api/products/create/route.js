@@ -17,7 +17,7 @@ async function createProductHandler(request) {
     const {
       name,
       description,
-      perchasePrice,
+      purchasePrice,
       sellingPrice,
       category,
       stockQty,
@@ -25,7 +25,7 @@ async function createProductHandler(request) {
     } = body;
 
     // Validate required fields
-    if (!name || !perchasePrice || !sellingPrice || !category || !sName) {
+    if (!name || !purchasePrice || !sellingPrice || !category || !sName) {
       return NextResponse.json(
         {
           success: false,
@@ -55,7 +55,7 @@ async function createProductHandler(request) {
     }
 
     // Validate purchase price
-    if (isNaN(perchasePrice) || perchasePrice < 0) {
+    if (isNaN(purchasePrice) || purchasePrice < 0) {
       return NextResponse.json(
         {
           success: false,
@@ -91,7 +91,7 @@ async function createProductHandler(request) {
     const newProduct = new Product({
       name: name.trim(),
       description: description?.trim() || "",
-      perchasePrice: parseFloat(perchasePrice),
+      purchasePrice: parseFloat(purchasePrice),
       sellingPrice: parseFloat(sellingPrice),
       category: category.trim(),
       stockQty: stockQty || 0,

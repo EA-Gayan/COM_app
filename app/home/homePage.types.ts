@@ -2,7 +2,7 @@ export interface prodctsProps {
   productId: number;
   name: string;
   description: string;
-  perchasePrice: number;
+  purchasePrice: number;
   sellingPrice: number;
   category: string;
   stockQty: number;

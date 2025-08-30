@@ -2,12 +2,12 @@
 
 import Spinner from "@/components/Common/Spinner/Spinner";
 import Nav from "@/components/Helper/Navbar/Nav";
-import { useEffect, useState } from "react";
-import { Pagination, Product } from "./productsPage.types";
-import ProductsTable from "@/components/ProductsTable/ProductsTable";
 import ProductModal from "@/components/ProductPageModals/ProductModal";
 import { ModalData } from "@/components/ProductPageModals/ProductModalTypes";
-import { set } from "mongoose";
+import ProductsTable from "@/components/ProductsTable/ProductsTable";
+import { useEffect, useState } from "react";
+import { FaExclamationTriangle } from "react-icons/fa";
+import { Pagination, Product } from "./productsPage.types";
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,6 +18,11 @@ const ProductsPage = () => {
   const [productModelOpen, setProductModelOpen] = useState(false);
   const [productData, setProductData] = useState<ModalData | null>(null);
   const [categoryList, setCategoryList] = useState<string[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteInfo, setDeleteInfo] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Page state
   const [page, setPage] = useState(1);
@@ -56,13 +61,61 @@ const ProductsPage = () => {
     console.log("Edit product:", product);
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Delete product:", id);
+  // Triggered from ProductsTable when user clicks delete
+  const confirmDelete = (id: string, name: string) => {
+    setDeleteInfo({ id, name });
+    setShowConfirm(true);
   };
 
-  const addProductData = (modalData: ModalData) => {
+  const handleDelete = async () => {
+    if (!deleteInfo) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/products/${deleteInfo.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        // refresh list
+        fetchProducts();
+      } else {
+        alert(data.message || "Failed to delete product");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+    } finally {
+      setLoading(false);
+      setShowConfirm(false);
+      setDeleteInfo(null);
+    }
+  };
+
+  const addProductData = async (modalData: ModalData) => {
     setProductData(modalData);
-    console.log("Add product:", modalData);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await fetch("/api/products/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(modalData),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to add product");
+      }
+
+      // Close modal
+      setProductModelOpen(false);
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      // Refresh current page but stay on it
+      fetchProducts();
+    }
   };
 
   return (
@@ -93,7 +146,7 @@ const ProductsPage = () => {
             products={products}
             pagination={pagination}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={confirmDelete}
             onPageChange={setPage}
           />
         )}
@@ -103,8 +156,37 @@ const ProductsPage = () => {
         <ProductModal
           categoryList={categoryList}
           onClose={() => setProductModelOpen(false)}
-          onSubmit={(productData) => addProductData(productData)}
+          onSubmit={addProductData}
         />
+      )}
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/20 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+            <h2 className="text-sm text-gray-700 mb-4 flex items-start gap-2">
+              <FaExclamationTriangle className="text-yellow-600 text-xl mt-0.5" />
+              <span>
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">{deleteInfo?.name}</span>?
+              </span>
+            </h2>
+            <div className="flex justify-end gap-2">
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
+                onClick={() => setShowConfirm(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded bg-blue-700 text-white hover:bg-blue-800 transition"
+                onClick={handleDelete}
+                disabled={loading}
+              >
+                {loading ? "Deleting..." : "Yes"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
