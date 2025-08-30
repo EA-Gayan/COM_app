@@ -15,7 +15,10 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
-                PRODUCT
+                PRODUCT NAME
+              </th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
+                SHORT NAME
               </th>
               <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">
                 CATEGORY
@@ -40,10 +43,13 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                 <td className="px-4 py-3 font-medium text-gray-900">
                   {item.name}
                 </td>
+                <td className="px-4 py-3 font-medium text-gray-900">
+                  {item.sName}
+                </td>
                 <td className="px-4 py-3 text-sm text-gray-600">
                   {item.category || "-"}
                 </td>
-                <td className="px-4 py-3 font-medium">{item.perchasePrice}</td>
+                <td className="px-4 py-3 font-medium">{item.purchasePrice}</td>
                 <td className="px-4 py-3 font-medium">{item.sellingPrice}</td>
                 <td className="px-4 py-3 font-medium text-red-600">
                   {item.stockQty}
@@ -57,7 +63,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                   </button>
                   <button
                     className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
-                    onClick={() => onDelete(item._id)}
+                    onClick={() => onDelete(item._id, item.name)}
                   >
                     <FaTrash size={16} />
                   </button>
