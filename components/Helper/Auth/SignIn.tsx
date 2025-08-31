@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Eye,
   EyeOff,
@@ -48,7 +47,6 @@ const SignIn = () => {
       [name]: value,
     }));
 
-    // Clear error when user starts typing/selecting
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -60,7 +58,6 @@ const SignIn = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -68,14 +65,12 @@ const SignIn = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    // Registration-specific validation
     if (!isSignIn) {
       if (!formData.userName.trim()) {
         newErrors.userName = "Username is required";
@@ -102,10 +97,7 @@ const SignIn = () => {
     try {
       const endpoint = isSignIn ? "/api/auth/signIn" : "/api/auth/register";
       const payload = isSignIn
-        ? {
-            email: formData.email,
-            password: formData.password,
-          }
+        ? { email: formData.email, password: formData.password }
         : {
             userName: formData.userName,
             email: formData.email,
@@ -115,42 +107,30 @@ const SignIn = () => {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       let data;
       try {
         data = await response.json();
-      } catch (parseError) {
+      } catch {
         throw new Error("Invalid response from server");
       }
 
       if (response.ok && data.success) {
-        // Show success message with variant
         enqueueSnackbar(data.message, { variant: "success" });
 
         if (isSignIn) {
-          // Store user data for signed in user - using the new response format
           localStorage.setItem("user", JSON.stringify(data.data.user));
-
-          // Show welcome message
           enqueueSnackbar(`Welcome back, ${data.data.user.userName}!`, {
             variant: "success",
           });
-
-          // Redirect to dashboard
-          setTimeout(() => {
-            router.push("/home");
-          });
+          setTimeout(() => router.push("/home"));
         } else {
-          // After successful registration, switch to sign in
           setIsSignIn(true);
         }
 
-        // Reset form
         setFormData({
           userName: "",
           email: "",
@@ -159,30 +139,22 @@ const SignIn = () => {
           role: "",
         });
       } else {
-        // Handle error responses with new format
-        const errorMessage = data.message || data.error || "An error occurred";
-        enqueueSnackbar(errorMessage, { variant: "error" });
-
-        // Log error stack if available (for development)
-        if (data.errorStack) {
+        enqueueSnackbar(data.message || data.error || "An error occurred", {
+          variant: "error",
+        });
+        if (data.errorStack)
           console.error("Backend Error Stack:", data.errorStack);
-        }
       }
     } catch (error) {
-      // Type-safe error handling - Option 1: Type assertion
       const err = error as Error;
-
-      // Handle different types of errors
       if (err.name === "TypeError" && err.message.includes("Failed to fetch")) {
-        enqueueSnackbar(
-          "Cannot connect to server. Please check if the server is running.",
-          { variant: "error" }
-        );
+        enqueueSnackbar("Cannot connect to server. Please check the server.", {
+          variant: "error",
+        });
       } else if (err.message === "Invalid response from server") {
-        enqueueSnackbar(
-          "Server returned an invalid response. Please try again.",
-          { variant: "error" }
-        );
+        enqueueSnackbar("Server returned an invalid response.", {
+          variant: "error",
+        });
       } else {
         enqueueSnackbar("Something went wrong. Please try again.", {
           variant: "error",
@@ -208,7 +180,6 @@ const SignIn = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full mb-4">
             <Palette className="w-8 h-8 text-white" />
@@ -223,12 +194,21 @@ const SignIn = () => {
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <div className="space-y-6">
+          {/* ✅ Added onKeyDown here */}
+          <div
+            className="space-y-6"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+          >
             {/* Registration Fields */}
             {!isSignIn && (
               <div className="space-y-4">
+                {/* Username */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     User Name
@@ -259,7 +239,7 @@ const SignIn = () => {
                   )}
                 </div>
 
-                {/* Role Selection */}
+                {/* Role */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Role
@@ -285,28 +265,11 @@ const SignIn = () => {
                           key={option.value}
                           value={option.value}
                           disabled={option.disabled}
-                          className={
-                            option.disabled ? "text-gray-400" : "text-gray-900"
-                          }
                         >
                           {option.label}
                         </option>
                       ))}
                     </select>
-                    {/* Custom dropdown arrow */}
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
                   </div>
                   {errors.role && (
                     <p className="mt-1 text-sm text-red-600">{errors.role}</p>
@@ -315,7 +278,7 @@ const SignIn = () => {
               </div>
             )}
 
-            {/* Email Field */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -344,7 +307,7 @@ const SignIn = () => {
               )}
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -373,11 +336,7 @@ const SignIn = () => {
                   disabled={isLoading}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
               {errors.password && (
@@ -385,7 +344,7 @@ const SignIn = () => {
               )}
             </div>
 
-            {/* Confirm Password Field (Registration only) */}
+            {/* Confirm Password (Register only) */}
             {!isSignIn && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -415,11 +374,7 @@ const SignIn = () => {
                     disabled={isLoading}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
+                    {showConfirmPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {errors.confirmPassword && (
@@ -427,19 +382,6 @@ const SignIn = () => {
                     {errors.confirmPassword}
                   </p>
                 )}
-              </div>
-            )}
-
-            {/* Forgot Password Link (Sign In only) */}
-            {isSignIn && (
-              <div className="text-right">
-                <button
-                  type="button"
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-                  disabled={isLoading}
-                >
-                  Forgot your password?
-                </button>
               </div>
             )}
 
@@ -463,7 +405,6 @@ const SignIn = () => {
             </button>
           </div>
 
-          {/* Toggle Mode */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               {isSignIn ? "Don't have an account?" : "Already have an account?"}
@@ -479,7 +420,6 @@ const SignIn = () => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>© 2025 Sineth Studio. All rights reserved.</p>
         </div>
