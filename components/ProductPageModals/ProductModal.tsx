@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ProductModalProps } from "./ProductModalTypes";
+import { set } from "mongoose";
 
 const ProductModal: React.FC<ProductModalProps> = (props) => {
   const [name, setName] = useState("");
@@ -11,10 +12,11 @@ const ProductModal: React.FC<ProductModalProps> = (props) => {
   const [category, setCategory] = useState("");
   const [stockQty, setStockQty] = useState<number | "">("");
   const [sName, setSName] = useState("");
-
+  const [_id, set_id] = useState("");
   // Pre-fill form when editing
   useEffect(() => {
     if (props.isEdit && props.initialData) {
+      set_id(props.initialData._id || "");
       setName(props.initialData.name);
       setDescription(props.initialData.description);
       setPurchasePrice(props.initialData.purchasePrice);
@@ -48,6 +50,7 @@ const ProductModal: React.FC<ProductModalProps> = (props) => {
     }
 
     props.onSubmit({
+      _id,
       name,
       description,
       purchasePrice: Number(purchasePrice),

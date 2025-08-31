@@ -19,6 +19,7 @@ const ProductsPage = () => {
   const [productData, setProductData] = useState<ModalData | null>(null);
   const [categoryList, setCategoryList] = useState<string[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isEditClicked, setIsEditClicked] = useState(false);
   const [deleteInfo, setDeleteInfo] = useState<{
     id: string;
     name: string;
@@ -59,6 +60,18 @@ const ProductsPage = () => {
   // Actions
   const handleEdit = (product: Product) => {
     console.log("Edit product:", product);
+    setIsEditClicked(true);
+    setProductModelOpen(true);
+    setProductData({
+      _id: product._id || "",
+      name: product.name,
+      description: product.description,
+      purchasePrice: product.purchasePrice,
+      sellingPrice: product.sellingPrice,
+      category: product.category || "",
+      stockQty: product.stockQty,
+      sName: product.sName,
+    });
   };
 
   // Triggered from ProductsTable when user clicks delete
@@ -90,34 +103,47 @@ const ProductsPage = () => {
     }
   };
 
-  const addProductData = async (modalData: ModalData) => {
-    setProductData(modalData);
+  const addOrUpdateProductData = async (modalData: ModalData) => {
     try {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("/api/products/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(modalData),
-      });
+      let res;
+
+      if (modalData?._id && modalData._id !== "") {
+        // Update product
+        res = await fetch(`/api/products/${modalData._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(modalData),
+        });
+      } else {
+        // Create new product
+        res = await fetch("/api/products/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(modalData),
+        });
+      }
 
       const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Failed to add product");
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to save product");
       }
 
       // Close modal
       setProductModelOpen(false);
-      setLoading(false);
     } catch (err: any) {
       setError(err.message);
     } finally {
-      // Refresh current page but stay on it
+      setLoading(false);
+      // Refresh product list
       fetchProducts();
     }
   };
 
+  console.log(productData);
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
@@ -154,9 +180,13 @@ const ProductsPage = () => {
 
       {productModelOpen && (
         <ProductModal
+          isEdit={isEditClicked}
+          initialData={productData || undefined}
           categoryList={categoryList}
-          onClose={() => setProductModelOpen(false)}
-          onSubmit={addProductData}
+          onClose={() => {
+            setProductModelOpen(false), setIsEditClicked(false);
+          }}
+          onSubmit={addOrUpdateProductData}
         />
       )}
       {showConfirm && (
