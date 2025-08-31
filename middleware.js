@@ -38,5 +38,6 @@ export const config = {
     "/upcomings/:path*",
     "/api/products/:path*", // Add this to include product API routes
     "/api/orders/:path*", // Add this to include product API routes
+    "/api/dashboard/:path*", // Add this to include product API routes
   ],
 };
