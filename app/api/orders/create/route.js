@@ -108,32 +108,32 @@ async function createOrderHandler(request) {
     }
 
     // --- Generate PDF ---
-    const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
-    const pdfBase64 = pdfBuffer.toString("base64");
+    // const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
+    // const pdfBase64 = pdfBuffer.toString("base64");
 
     // --- Send WhatsApp asynchronously ---
-    if (isWhatsapp && customerDetails.tel) {
-      setTimeout(async () => {
-        try {
-          await whatsAppService.sendInvoice(customerDetails.tel, newOrder, {
-            pdfOptions: { type: "invoice" },
-            messageOptions: {
-              caption: `📄 Your invoice for order #${newOrder.orderId}`,
-            },
-          });
-          console.log(`Invoice sent via WhatsApp to ${customerDetails.tel}`);
-        } catch (err) {
-          console.error("Failed to send WhatsApp message:", err);
-        }
-      }, 0);
-    }
+    // if (isWhatsapp && customerDetails.tel) {
+    //   setTimeout(async () => {
+    //     try {
+    //       await whatsAppService.sendInvoice(customerDetails.tel, newOrder, {
+    //         pdfOptions: { type: "invoice" },
+    //         messageOptions: {
+    //           caption: `📄 Your invoice for order #${newOrder.orderId}`,
+    //         },
+    //       });
+    //       console.log(`Invoice sent via WhatsApp to ${customerDetails.tel}`);
+    //     } catch (err) {
+    //       console.error("Failed to send WhatsApp message:", err);
+    //     }
+    //   }, 0);
+    // }
 
     // --- Return PDF as base64 in JSON ---
-    return NextResponse.json({
-      success: true,
-      orderId: newOrder.orderId,
-      pdfBase64,
-    });
+    // return NextResponse.json({
+    //   success: true,
+    //   orderId: newOrder.orderId,
+    //   pdfBase64,
+    // });
   } catch (error) {
     console.error("Create order error:", error);
 
