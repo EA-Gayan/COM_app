@@ -14,12 +14,9 @@ async function generateOrderId() {
   const day = String(today.getDate()).padStart(2, "0");
   const datePart = `${year}${month}${day}`;
 
-  // Find last order for today
   const lastOrder = await Order.findOne({
     orderId: new RegExp(`^${datePart}-\\d{3}$`),
-  })
-    .sort({ orderId: -1 })
-    .exec();
+  }).sort({ orderId: -1 });
 
   let seq = 1;
   if (lastOrder) {
@@ -27,12 +24,10 @@ async function generateOrderId() {
     seq = lastSeq + 1;
   }
 
-  const seqPart = String(seq).padStart(3, "0");
-  return `${datePart}-${seqPart}`;
+  return `${datePart}-${String(seq).padStart(3, "0")}`;
 }
-// --- END Helper: generate daily sequential orderId ---
+// --- END Helper ---
 
-// --- API route ---
 export const POST = withApiAuth(createOrderHandler);
 
 async function createOrderHandler(request) {
@@ -41,7 +36,7 @@ async function createOrderHandler(request) {
     const body = await request.json();
     const { customerDetails, items, bills, orderStatus, isWhatsapp } = body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!items?.length) {
       return NextResponse.json(
         { success: false, message: "At least one order item is required" },
         { status: 400 }
@@ -57,7 +52,7 @@ async function createOrderHandler(request) {
 
     // --- Check stock availability ---
     for (const item of items) {
-      const product = await Product.findOne({ _id: item._id });
+      const product = await Product.findById(item._id);
       if (!product) {
         return NextResponse.json(
           { success: false, message: `Product ${item._id} not found` },
@@ -101,13 +96,12 @@ async function createOrderHandler(request) {
       })),
     });
 
-    // --- Save order ---
     await newOrder.save();
 
     // --- Update product stock ---
     for (const item of items) {
-      await Product.findOneAndUpdate(
-        { _id: item._id },
+      await Product.findByIdAndUpdate(
+        item._id,
         { $inc: { stockQty: -item.quantity, availableQty: -item.quantity } },
         { new: true, runValidators: true }
       );
@@ -115,30 +109,30 @@ async function createOrderHandler(request) {
 
     // --- Generate PDF ---
     const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
+    const pdfBase64 = pdfBuffer.toString("base64");
 
-    // --- Send PDF via WhatsApp if requested ---
+    // --- Send WhatsApp asynchronously ---
     if (isWhatsapp && customerDetails.tel) {
-      try {
-        await whatsAppService.sendInvoice(customerDetails.tel, newOrder, {
-          pdfOptions: { type: "invoice" },
-          messageOptions: {
-            caption: `📄 Your invoice for order #${newOrder.orderId}`,
-          },
-        });
-        console.log(`Invoice sent via WhatsApp to ${customerDetails.tel}`);
-      } catch (whatsappError) {
-        console.error("Failed to send WhatsApp message:", whatsappError);
-        // You can decide whether to fail the API call or just log the error
-      }
+      setTimeout(async () => {
+        try {
+          await whatsAppService.sendInvoice(customerDetails.tel, newOrder, {
+            pdfOptions: { type: "invoice" },
+            messageOptions: {
+              caption: `📄 Your invoice for order #${newOrder.orderId}`,
+            },
+          });
+          console.log(`Invoice sent via WhatsApp to ${customerDetails.tel}`);
+        } catch (err) {
+          console.error("Failed to send WhatsApp message:", err);
+        }
+      }, 0);
     }
 
-    // --- Return PDF with orderId filename ---
-    return new NextResponse(pdfBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=invoice-${newOrder.orderId}.pdf`,
-      },
+    // --- Return PDF as base64 in JSON ---
+    return NextResponse.json({
+      success: true,
+      orderId: newOrder.orderId,
+      pdfBase64,
     });
   } catch (error) {
     console.error("Create order error:", error);
