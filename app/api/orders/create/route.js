@@ -35,7 +35,7 @@ async function generateOrderId() {
 // --- END Helper: generate daily sequential orderId ---
 
 // --- API route ---
-export const POST = withApiAuth(createOrderHandler);
+export const POST = createOrderHandler;
 
 async function createOrderHandler(request, context) {
   const user = context.user;
