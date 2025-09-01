@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
 import pdfService from "../../../../services/pdfService";
 import whatsAppService from "../../../../services/whatsAppService";
 
+export const runtime = "nodejs";
+
 // --- Helper: generate daily sequential orderId ---
 async function generateOrderId() {
   const today = new Date();
@@ -35,7 +37,8 @@ async function generateOrderId() {
 // --- API route ---
 export const POST = withApiAuth(createOrderHandler);
 
-async function createOrderHandler(request) {
+async function createOrderHandler(request, context) {
+  const user = context.user;
   try {
     await connectionToDataBase();
     const body = await request.json();
