@@ -128,6 +128,7 @@ const Cart = (props: CartProps) => {
       </div>
 
       <button
+        disabled={props.items.length === 0}
         className="mt-4 bg-green-800 text-white font-bold text-xl p-4 text-center rounded-lg cursor-pointer"
         onClick={() => setIsOpen(true)}
       >
