@@ -139,11 +139,7 @@ const UpcomingsPage = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="sticky top-0 z-10">
-        <Nav
-          showSearch={false}
-          onSearchChange={(val) => setSearchText(val)}
-          pageType={setPageName}
-        />
+        <Nav showSearch={false} onSearchChange={(val) => setSearchText(val)} />
         <div className="flex items-center justify-between sticky top-20 px-8 my-4 bg-white z-10">
           <div className="flex items-center gap-4 ">
             <button
