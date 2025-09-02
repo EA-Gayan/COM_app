@@ -33,7 +33,7 @@ class PDFService {
     }
   }
 
-  // --- Generate PDF file on disk ---
+  // --- Generate PDF file  ---
   async generateInvoice(order, options = {}) {
     return this.generateFile(order, "invoice", options);
   }
