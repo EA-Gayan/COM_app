@@ -4,7 +4,8 @@ import Order from "../../../../models/orderModel";
 import Product from "../../../../models/productModel";
 import { NextResponse } from "next/server";
 import pdfService from "../../../../services/pdfService";
-import whatsAppService from "../../../../services/whatsAppService";
+import { sendDocument } from "../../../../services/whatsAppService";
+import { sendTemplateMessage } from "../../../../services/whatsAppTextService";
 
 // --- Helper: generate daily sequential orderId ---
 async function generateOrderId() {
@@ -112,21 +113,19 @@ async function createOrderHandler(request) {
     const pdfBase64 = pdfBuffer.toString("base64");
 
     // --- Send WhatsApp asynchronously ---
-    // if (isWhatsapp && customerDetails.tel) {
-    //   setTimeout(async () => {
-    //     try {
-    //       await whatsAppService.sendInvoice(customerDetails.tel, newOrder, {
-    //         pdfOptions: { type: "invoice" },
-    //         messageOptions: {
-    //           caption: `📄 Your invoice for order #${newOrder.orderId}`,
-    //         },
-    //       });
-    //       console.log(`Invoice sent via WhatsApp to ${customerDetails.tel}`);
-    //     } catch (err) {
-    //       console.error("Failed to send WhatsApp message:", err);
-    //     }
-    //   }, 0);
-    // }
+    if (isWhatsapp && customerDetails.tel) {
+      await sendTemplateMessage({
+        to: customerDetails.tel,
+        templateName: "hello_world",
+        text: "Hello! This is a test WhatsApp message.",
+      });
+      sendDocument({
+        to: customerDetails.tel,
+        filename: `Invoice-${orderId}.pdf`,
+        pdfBuffer,
+        caption: `Your order ${orderId} is confirmed `,
+      });
+    }
 
     // --- Return PDF as base64 in JSON ---
     return NextResponse.json({
