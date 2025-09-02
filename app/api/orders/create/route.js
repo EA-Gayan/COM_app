@@ -112,6 +112,22 @@ async function createOrderHandler(request) {
     const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
     const pdfBase64 = pdfBuffer.toString("base64");
 
+    console.log("PDF Buffer size:", pdfBuffer.length);
+    console.log("PDF Buffer type:", typeof pdfBuffer);
+
+    // Add these debug lines:
+    const pdfHeader = pdfBuffer.toString("ascii", 0, 4);
+    console.log("PDF Header:", pdfHeader); // Should show "%PDF"
+
+    // Save debug file
+    const fs = require("fs");
+    try {
+      fs.writeFileSync(`debug-invoice-${orderId}.pdf`, pdfBuffer);
+      console.log(`Debug PDF saved as debug-invoice-${orderId}.pdf`);
+    } catch (err) {
+      console.log("Could not save debug PDF:", err.message);
+    }
+
     // --- Send WhatsApp asynchronously ---
     if (isWhatsapp && customerDetails.tel) {
       await sendTemplateMessage({
@@ -119,7 +135,7 @@ async function createOrderHandler(request) {
         templateName: "hello_world",
         text: "Hello! This is a test WhatsApp message.",
       });
-      sendDocument({
+      await sendDocument({
         to: customerDetails.tel,
         filename: `Invoice-${orderId}.pdf`,
         pdfBuffer,
