@@ -54,6 +54,7 @@ export interface CreateOrderProps {
     price: number;
     _id: string;
   }[];
+  orderStatus: number;
   isWhatsapp: boolean;
 }
 
