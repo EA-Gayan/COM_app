@@ -108,8 +108,8 @@ async function createOrderHandler(request) {
     }
 
     // --- Generate PDF ---
-    // const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
-    // const pdfBase64 = pdfBuffer.toString("base64");
+    const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
+    const pdfBase64 = pdfBuffer.toString("base64");
 
     // --- Send WhatsApp asynchronously ---
     // if (isWhatsapp && customerDetails.tel) {
@@ -129,11 +129,22 @@ async function createOrderHandler(request) {
     // }
 
     // --- Return PDF as base64 in JSON ---
-    // return NextResponse.json({
-    //   success: true,
-    //   orderId: newOrder.orderId,
-    //   pdfBase64,
-    // });
+    return NextResponse.json({
+      success: true,
+      message: "Order created successfully",
+      orderId: newOrder.orderId,
+      pdfBase64,
+    });
+    // // --- Return success response ---
+    // return NextResponse.json(
+    //   {
+    //     success: true,
+    //     message: "Order created successfully",
+    //     orderId: newOrder.orderId,
+    //     order: newOrder,
+    //   },
+    //   { status: 201 }
+    // );
   } catch (error) {
     console.error("Create order error:", error);
 

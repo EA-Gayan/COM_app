@@ -38,6 +38,7 @@ const Cart = (props: CartProps) => {
           _id: item._id,
         })),
         isWhatsapp: isWhatsapp,
+        orderStatus: 0,
       };
 
       // Send order data
@@ -49,17 +50,26 @@ const Cart = (props: CartProps) => {
         .then(async (res) => {
           if (!res.ok) throw new Error("Order creation failed");
 
-          // Convert response to blob (PDF)
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
+          const data = await res.json();
+          if (data.success && data.pdfBase64) {
+            // Convert base64 to Blob
+            const byteCharacters = atob(data.pdfBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: "application/pdf" });
 
-          // Trigger download
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `invoice.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+            // Trigger download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `invoice_${data.orderId || "order"}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
 
           // Clear cart after order is placed
           handleClearAll();

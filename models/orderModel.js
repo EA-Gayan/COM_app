@@ -15,7 +15,7 @@ const orderSchema = new mongoose.Schema(
     orderStatus: {
       type: Number,
       default: 0,
-    }, // 0=pending,1=paid,etc.
+    }, //0=paid, 1=pending etc.
     orderDate: {
       type: Date,
       default: Date.now,
