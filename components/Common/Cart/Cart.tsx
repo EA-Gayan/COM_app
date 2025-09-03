@@ -40,7 +40,7 @@ const Cart = (props: CartProps) => {
         isWhatsapp: isWhatsapp,
         orderStatus: 0,
       };
-
+      console.log(orderData);
       // Send order data
       fetch("/api/orders/create", {
         method: "POST",

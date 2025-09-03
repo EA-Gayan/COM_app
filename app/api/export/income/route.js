@@ -76,6 +76,7 @@ export async function POST(request) {
       { header: "Order ID", key: "orderId", width: 20 },
       { header: "Customer Name", key: "customerName", width: 25 },
       { header: "Order Date", key: "orderDate", width: 20 },
+      { header: "Items", key: "itemList", width: 30 },
       { header: "Total", key: "total", width: 15 },
       { header: "Tax", key: "tax", width: 15 },
       { header: "Discount", key: "discount", width: 15 },
@@ -88,6 +89,12 @@ export async function POST(request) {
         orderId: o.orderId,
         customerName: o.customerDetails?.name || "",
         orderDate: new Date(o.orderDate).toLocaleString(),
+        itemList: o.items
+          .map(
+            (item) =>
+              `${item.name}  Rs ${item.pricePerQuantity} x ${item.quantity}`
+          )
+          .join(", "),
         total: o.bills.total,
         tax: o.bills.tax,
         discount: o.bills.discount,

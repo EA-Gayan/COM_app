@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { FaFileExport } from "react-icons/fa";
 import {
   Bar,
   BarChart,
@@ -25,6 +26,9 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
+  const [filterRequest, setFilterRequest] = useState<FilterRequest | null>({
+    filterType: "TODAY",
+  });
 
   // data for chart
   const revenueData = props.responseData?.barChartData;
@@ -32,6 +36,46 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
   useEffect(() => {
     setActiveFilter(props.filterType);
   }, []);
+
+  const exportOrders = async (type: "income" | "expenses") => {
+    try {
+      let res: Response;
+      let fileName = "export.xlsx";
+
+      if (type === "expenses") {
+        res = await fetch("/api/export/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(filterRequest),
+        });
+        fileName = "expenses.xlsx";
+      } else {
+        res = await fetch("/api/export/income", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(filterRequest),
+        });
+        fileName = "income.xlsx";
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to export");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("Export failed:", err.message);
+    }
+  };
 
   const orderValueRanges =
     props.responseData?.pieChartData.orderValueRanges.map((item, index) => ({
@@ -41,11 +85,10 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
       color: ["#6366f1", "#fbbf24", "#10b981", "#ef4444", "#3b82f6"][index % 5], // assign colors dynamically
     })) ?? [];
 
-  const productRevenue =
-    props.responseData?.pieChartData.productRevenue.map((item, index) => ({
+  const incomeExpenses =
+    props.responseData?.pieChartData.incomeVsExpenses.map((item, index) => ({
       name: item.label,
       value: item.percentage, // or `item.value` depending on what you want charted
-      orders: item.quantity, // comes from API
       color: ["#6366f1", "#fbbf24", "#10b981", "#ef4444", "#3b82f6"][index % 5],
     })) ?? [];
 
@@ -78,6 +121,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
     }
     props.setActiveFilter(filterType);
     props.ordersOverviewRequestPayload(payload);
+    setFilterRequest(payload);
   };
 
   return (
@@ -173,10 +217,10 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue</h3>
           <div className="flex items-baseline space-x-4 mb-6">
+            <span className="text-sm text-gray-500">Rs</span>
             <span className="text-3xl font-bold text-gray-900">
               {props?.responseData?.totalIncome}
             </span>
-            <span className="text-sm text-gray-500">Rs</span>
             <span className="text-green-600 text-sm font-medium">
               {props.responseData?.incomePercentage !== undefined && (
                 <span
@@ -195,17 +239,18 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
           <div className="flex items-center space-x-4 mb-4 text-sm">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-indigo-600 rounded-sm"></div>
-              <span>{activeFilter} (so far)</span>
+              <span>{activeFilter} income(so far)</span>
               <span className="font-medium">
-                {props?.responseData?.totalIncome}
-                Rs
+                Rs.{props?.responseData?.totalIncome}
               </span>
             </div>
-            {/* <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-yellow-400 rounded-sm"></div>
-              <span>Last week</span>
-              <span className="font-medium">32K SAR</span>
-            </div> */}
+              <span>{activeFilter} expense(so far)</span>
+              <span className="font-medium">
+                Rs.{props?.responseData?.totalExpenses}
+              </span>
+            </div>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -214,7 +259,11 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                 <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" fill="#6366f1" />
+                {/* Income Bar */}
+                <Bar dataKey="income" fill="#6366f1" name="Income" />
+
+                {/* Expense Bar */}
+                <Bar dataKey="expense" fill="#fbbf24" name="Expense" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -224,9 +273,21 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         <div className="space-y-6">
           {/* Total Orders */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Total Orders
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Total Orders
+              </h3>
+              <button
+                onClick={() => {
+                  exportOrders("income");
+                  console.log("Export clicked");
+                }}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-1"
+              >
+                <FaFileExport className="w-4 h-4" />
+                Export
+              </button>
+            </div>
             <div className="flex items-baseline justify-between">
               <span className="text-3xl font-bold text-gray-900">
                 {props.responseData?.totalOrders}
@@ -278,6 +339,48 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                     >
                       {props.responseData.ordersPercentage >= 0 ? "↑" : "↓"}{" "}
                       {Math.abs(props.responseData.ordersPercentage)}%
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Expenses */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Total Expenses
+              </h3>{" "}
+              <button
+                onClick={() => {
+                  exportOrders("expenses");
+                  console.log("Export clicked");
+                }}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 flex items-center gap-1"
+              >
+                <FaFileExport className="w-4 h-4" />
+                Export
+              </button>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-3xl font-bold text-gray-900">
+                {props.responseData?.totalExpenses}
+              </span>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-sm font-medium">
+                  {props.responseData?.expensesPercentage !== undefined && (
+                    <span
+                      className={`text-sm font-medium ${
+                        props.responseData.expensesPercentage >= 0
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {props.responseData.expensesPercentage >= 0 ? "↑" : "↓"}{" "}
+                      {Math.abs(props.responseData.expensesPercentage)}%
                     </span>
                   )}
                 </span>
@@ -348,7 +451,7 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center justify-between mb-4 py-1">
             <h3 className="text-lg font-semibold text-gray-900">
-              Product Revenue Range
+              Income Vs Expenses
             </h3>
             {/* <select className="text-sm border border-gray-300 rounded px-2 py-1">
               <option>Value</option>
@@ -359,29 +462,27 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={productRevenue}
+                    data={incomeExpenses}
                     cx="50%"
                     cy="50%"
                     innerRadius={40}
                     outerRadius={60}
                     dataKey="value"
                   >
-                    {productRevenue.map((entry, index) => (
+                    {incomeExpenses.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-2xl font-bold text-gray-900">
-                  {props.responseData?.pieChartData.productRevenue.length}
-                </span>
-                <span className="text-sm text-gray-500">Products</span>
+                <span className="text-xl font-bold text-gray-900">100%</span>
+                <span className="text-sm text-gray-500">Total</span>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            {productRevenue.map((item, index) => (
+            {incomeExpenses.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div
@@ -389,7 +490,6 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
                     style={{ backgroundColor: item.color }}
                   ></div>
                   <span className="text-sm text-gray-600">{item.name}</span>
-                  <span className="text-sm font-medium">{item.orders}</span>
                 </div>
                 <span className="text-sm font-bold">{item.value}%</span>
               </div>
@@ -596,6 +696,50 @@ const OrderOverviewSection = (props: OrderOverviewSectionProps) => {
 
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {i.createdAt}
+                  </td>
+                </tr>
+              </tbody>
+            ))}
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-8 bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Recent Expenses
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                  DESCRIPTION
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                  DATE
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                  AMOUNT
+                </th>
+              </tr>
+            </thead>
+            {props.responseData?.expenseList.map((i) => (
+              <tbody key={i._id} className="divide-y divide-gray-200">
+                <tr className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    {i?.expenseId}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {i.description}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{i.date}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {i.amount}
                   </td>
                 </tr>
               </tbody>

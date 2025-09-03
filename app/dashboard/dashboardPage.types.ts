@@ -1,3 +1,4 @@
+import { Expense } from "../expenses/expensesPage.types";
 import { OrderProps } from "../orders/orderPage.types";
 import { Product } from "../products/productsPage.types";
 
@@ -36,6 +37,12 @@ interface OrderValuePieChart {
   totalValue: number;
   percentage: number;
 }
+
+interface incomeVsExpensesPieChart {
+  label: string;
+  value: number;
+  percentage: number;
+}
 // --- END PIE CHART ITEMS TYPES ---
 
 // Final PieChartData structure
@@ -43,15 +50,19 @@ interface PieChartData {
   categoryRevenue: CategoryRevenuePieChart[];
   productRevenue: ProductRevenuePieChart[];
   orderValueRanges: OrderValuePieChart[];
+  incomeVsExpenses: incomeVsExpensesPieChart[];
 }
 
 export interface dashboardResponseData {
   totalOrders: number;
   totalIncome: number;
+  totalExpenses: number;
   avgOrderValue: number;
   ordersPercentage: number;
   incomePercentage: number;
+  expensesPercentage: number;
   orderList: OrderProps[];
+  expenseList: Expense[];
   dateWiseIncome: [];
   barChartData: [];
   productWiseProfit: [];

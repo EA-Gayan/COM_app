@@ -98,8 +98,9 @@ const Home = () => {
 
   // Calculate totals
   const discount = 0;
-  const vat =
-    cart.reduce((acc, item) => acc + item.price * item.quantity, 0) * 0.15; // 15% VAT
+  const vat = 0;
+  // const vat =
+  //   cart.reduce((acc, item) => acc + item.price * item.quantity, 0) * 0.15; // 15% VAT
   const total =
     cart.reduce((acc, item) => acc + item.price * item.quantity, 0) +
     vat -
