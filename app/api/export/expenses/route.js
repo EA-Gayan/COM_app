@@ -3,6 +3,10 @@ import ExcelJS from "exceljs";
 import connectionToDataBase from "../../../../lib/mongoose";
 import Expenses from "../../../../models/expensesModel";
 
+function formatDate(d) {
+  return d.toISOString().split("T")[0]; // YYYY-MM-DD
+}
+
 export async function POST(request) {
   try {
     await connectionToDataBase();
@@ -48,7 +52,6 @@ export async function POST(request) {
         }
         start = new Date(fromDate);
         end = new Date(toDate);
-        end.setHours(23, 59, 59, 999);
         break;
 
       default:
@@ -58,9 +61,13 @@ export async function POST(request) {
         );
     }
 
+    // Convert start/end into YYYY-MM-DD strings
+    const startStr = formatDate(start);
+    const endStr = formatDate(end);
+
     // Fetch filtered expenses
     const expenses = await Expenses.find({
-      date: { $gte: start, $lt: end },
+      date: { $gte: startStr, $lte: endStr },
     }).lean();
 
     // Create workbook
@@ -70,18 +77,18 @@ export async function POST(request) {
     // Define headers
     worksheet.columns = [
       { header: "ID", key: "_id", width: 30 },
+      { header: "Date", key: "date", width: 20 },
       { header: "Description", key: "description", width: 40 },
       { header: "Amount", key: "amount", width: 15 },
-      { header: "Date", key: "date", width: 20 },
     ];
 
     // Fill rows
     expenses.forEach((exp) => {
       worksheet.addRow({
-        _id: exp._id.toString(),
+        _id: exp.expenseId.toString(),
+        date: exp.date || "",
         description: exp.description || "",
         amount: exp.amount,
-        date: exp.date ? new Date(exp.date).toLocaleDateString() : "",
       });
     });
 
