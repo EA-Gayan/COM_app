@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import connectionToDataBase from "../../../../lib/mongoose";
-import Expenses from "../../../../models/expensesModel";
+import Order from "../../../../models/orderModel";
 
 export async function POST(request) {
   try {
-    await connectionToDataBase();
-
     const { filterType, fromDate, toDate } = await request.json();
 
     let start, end;
     const now = new Date();
 
-    // --- Determine date range ---
+    // --- Determine current period ---
     switch (filterType) {
       case "TODAY":
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -42,7 +40,7 @@ export async function POST(request) {
       case "FROM_TO":
         if (!fromDate || !toDate) {
           return NextResponse.json(
-            { success: false, message: "FROM_TO requires fromDate and toDate" },
+            { success: false, message: "FROM/TO requires fromDate and toDate" },
             { status: 400 }
           );
         }
@@ -58,52 +56,63 @@ export async function POST(request) {
         );
     }
 
-    // Fetch filtered expenses
-    const expenses = await Expenses.find({
-      date: { $gte: start, $lt: end },
+    await connectionToDataBase();
+
+    // --- Fetch orders within range ---
+    const orders = await Order.find({
+      orderDate: { $gte: start, $lt: end },
     }).lean();
 
-    // Create workbook
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Expenses");
+    if (!orders.length) {
+      return NextResponse.json({ success: false, message: "No data found" });
+    }
 
-    // Define headers
+    // --- Create Excel workbook ---
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Income");
+
+    // Header row
     worksheet.columns = [
-      { header: "ID", key: "_id", width: 30 },
-      { header: "Description", key: "description", width: 40 },
-      { header: "Amount", key: "amount", width: 15 },
-      { header: "Date", key: "date", width: 20 },
+      { header: "Order ID", key: "orderId", width: 20 },
+      { header: "Customer Name", key: "customerName", width: 25 },
+      { header: "Order Date", key: "orderDate", width: 20 },
+      { header: "Total", key: "total", width: 15 },
+      { header: "Tax", key: "tax", width: 15 },
+      { header: "Discount", key: "discount", width: 15 },
+      { header: "Net Income", key: "netIncome", width: 15 },
     ];
 
-    // Fill rows
-    expenses.forEach((exp) => {
+    // Add rows
+    orders.forEach((o) => {
       worksheet.addRow({
-        _id: exp._id.toString(),
-        description: exp.description || "",
-        amount: exp.amount,
-        date: exp.date ? new Date(exp.date).toLocaleDateString() : "",
+        orderId: o.orderId,
+        customerName: o.customerDetails?.name || "",
+        orderDate: new Date(o.orderDate).toLocaleString(),
+        total: o.bills.total,
+        tax: o.bills.tax,
+        discount: o.bills.discount,
+        netIncome: o.bills.total + o.bills.tax - o.bills.discount,
       });
     });
 
-    // Add total row
-    const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    worksheet.addRow({});
-    worksheet.addRow({ description: "Total", amount: total });
+    // Format header
+    worksheet.getRow(1).font = { bold: true };
 
-    // Generate buffer
+    // --- Return as file ---
     const buffer = await workbook.xlsx.writeBuffer();
 
-    return new Response(buffer, {
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename=expenses.xlsx`,
+        "Content-Disposition": `attachment; filename="income_${filterType}.xlsx"`,
       },
     });
-  } catch (error) {
+  } catch (err) {
+    console.error("Error generating Excel:", err);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to export expenses" },
+      { success: false, message: "Failed to generate Excel" },
       { status: 500 }
     );
   }
