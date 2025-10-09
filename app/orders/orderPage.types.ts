@@ -55,7 +55,7 @@ export interface CreateOrderProps {
     _id: string;
   }[];
   orderStatus: number;
-  isWhatsapp: boolean;
+  isSMS: boolean;
 }
 
 export interface Pagination {
