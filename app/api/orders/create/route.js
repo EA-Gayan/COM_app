@@ -115,23 +115,20 @@ async function createOrderHandler(request) {
     const pdfHeader = pdfBuffer.toString("ascii", 0, 4);
     console.log("PDF Header:", pdfHeader); // Should show "%PDF"
 
-    // --- Send SMS asynchronously with simulated bold ---
+    // --- Send SMS asynchronously ---
     if (isSMS && customerDetails.tel) {
-      // Build item details
-      const itemLines = items
-        .map(
-          (item) =>
-            `${item.quantity} x ${item.name.toUpperCase()} @ Rs${
-              item.pricePerQuantity
-            } = Rs${item.price}`
-        )
-        .join("\n");
+      // Build product details like "1x Oil, 1x Shampoo"
+      const productList = items
+        .map((item) => `${item.quantity}x ${item.name}`)
+        .join(", ");
 
       const smsMessage =
-        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED \n` +
-        `${itemLines}\n` +
-        `DISCOUNT: Rs${bills.discount || 0}\n` +
-        `TOTAL: Rs${bills.total}`;
+        `Dear ${customerDetails.name},\n\n` +
+        `Thank you for your order!\n\n` +
+        `Order ID: ${orderId}\n` +
+        `Products: ${productList}\n` +
+        `Total: Rs. ${bills.total}\n\n` +
+        `-Sineth Studio-`;
 
       await sendSMS({
         recipient: customerDetails.tel,
