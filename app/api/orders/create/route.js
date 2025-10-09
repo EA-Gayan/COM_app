@@ -128,9 +128,8 @@ async function createOrderHandler(request) {
         .join("\n");
 
       const smsMessage =
-        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED ✅ :\n` +
+        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED ✅ \n` +
         `${itemLines}\n` +
-        `VAT: Rs${bills.tax || 0}\n` +
         `DISCOUNT: Rs${bills.discount || 0}\n` +
         `TOTAL: Rs${bills.total}`;
 
