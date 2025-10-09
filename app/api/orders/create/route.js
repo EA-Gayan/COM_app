@@ -121,14 +121,14 @@ async function createOrderHandler(request) {
       const itemLines = items
         .map(
           (item) =>
-            `*${item.quantity} x ${item.name.toUpperCase()}* @ Rs${
+            `${item.quantity} x ${item.name.toUpperCase()} @ Rs${
               item.pricePerQuantity
             } = Rs${item.price}`
         )
         .join("\n");
 
       const smsMessage =
-        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED ✅ \n` +
+        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED \n` +
         `${itemLines}\n` +
         `DISCOUNT: Rs${bills.discount || 0}\n` +
         `TOTAL: Rs${bills.total}`;
