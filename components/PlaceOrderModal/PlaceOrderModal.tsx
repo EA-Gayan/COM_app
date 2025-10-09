@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PlaceOrderModalProps } from "./PlaceOrderModal.types";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaSms } from "react-icons/fa";
 
 const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
   const [name, setName] = useState("");
@@ -37,12 +37,12 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
               props.onSubmit({ name, telNo: telNo });
               props.onClose();
               props.onCompleteOrder(true);
-              props.onWhatsappOrder(true);
+              props.onSmsOrder(true);
             }}
             className="flex items-center justify-center px-4 py-2 bg-green-800 text-white font-medium rounded-md hover:bg-green-900 transition w-full sm:w-auto"
           >
-            <FaWhatsapp className="mr-2 text-xl" />
-            WhatsApp
+            <FaSms className="mr-2 text-xl" />
+            SMS
           </button>
 
           <button
@@ -50,7 +50,7 @@ const PlaceOrderModal: React.FC<PlaceOrderModalProps> = (props) => {
               props.onSubmit({ name, telNo: telNo });
               props.onClose();
               props.onCompleteOrder(true);
-              props.onWhatsappOrder(false);
+              props.onSmsOrder(false);
             }}
             className="px-4 py-2 bg-blue-800 text-white font-medium rounded-md hover:bg-blue-900 transition w-full sm:w-auto"
           >

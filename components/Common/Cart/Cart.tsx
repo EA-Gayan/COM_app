@@ -10,7 +10,7 @@ import { placeOrderOnSubmitData } from "@/components/PlaceOrderModal/PlaceOrderM
 const Cart = (props: CartProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [completeOrder, setCompleteOrder] = useState(false);
-  const [isWhatsapp, setIsWhatsapp] = useState(false);
+  const [isSMS, setIsSMS] = useState(false);
   const [modalData, setModalData] = useState<placeOrderOnSubmitData | null>(
     null
   );
@@ -37,7 +37,7 @@ const Cart = (props: CartProps) => {
           price: item.price * item.quantity,
           _id: item._id,
         })),
-        isWhatsapp: isWhatsapp,
+        isSMS: isSMS,
         orderStatus: 0,
       };
       console.log(orderData);
@@ -85,7 +85,7 @@ const Cart = (props: CartProps) => {
     setModalData(null);
     setCreateOrderData(null);
     setCompleteOrder(false);
-    setIsWhatsapp(false);
+    setIsSMS(false);
     setIsOpen(false);
   };
 
@@ -151,7 +151,7 @@ const Cart = (props: CartProps) => {
           onClose={() => setIsOpen(false)}
           onSubmit={setModalData}
           onCompleteOrder={setCompleteOrder}
-          onWhatsappOrder={setIsWhatsapp}
+          onSmsOrder={setIsSMS}
         />
       )}
     </div>

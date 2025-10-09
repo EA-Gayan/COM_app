@@ -4,8 +4,7 @@ import Order from "../../../../models/orderModel";
 import Product from "../../../../models/productModel";
 import { NextResponse } from "next/server";
 import pdfService from "../../../../services/pdfService";
-import { sendDocument } from "../../../../services/whatsAppService";
-import { sendTemplateMessage } from "../../../../services/whatsAppTextService";
+import { sendSMS } from "../../../../services/smsService";
 
 // --- Helper: generate daily sequential orderId ---
 async function generateOrderId() {
@@ -35,7 +34,7 @@ async function createOrderHandler(request) {
   try {
     await connectionToDataBase();
     const body = await request.json();
-    const { customerDetails, items, bills, orderStatus, isWhatsapp } = body;
+    const { customerDetails, items, bills, orderStatus, isSMS } = body;
 
     if (!items?.length) {
       return NextResponse.json(
@@ -112,34 +111,32 @@ async function createOrderHandler(request) {
     const pdfBuffer = await pdfService.generateBuffer(newOrder, "invoice");
     const pdfBase64 = pdfBuffer.toString("base64");
 
-    console.log("PDF Buffer size:", pdfBuffer.length);
-    console.log("PDF Buffer type:", typeof pdfBuffer);
-
     // Add these debug lines:
     const pdfHeader = pdfBuffer.toString("ascii", 0, 4);
     console.log("PDF Header:", pdfHeader); // Should show "%PDF"
 
-    // Save debug file
-    const fs = require("fs");
-    try {
-      fs.writeFileSync(`debug-invoice-${orderId}.pdf`, pdfBuffer);
-      console.log(`Debug PDF saved as debug-invoice-${orderId}.pdf`);
-    } catch (err) {
-      console.log("Could not save debug PDF:", err.message);
-    }
+    // --- Send SMS asynchronously with simulated bold ---
+    if (isSMS && customerDetails.tel) {
+      // Build item details
+      const itemLines = items
+        .map(
+          (item) =>
+            `*${item.quantity} x ${item.name.toUpperCase()}* @ Rs${
+              item.pricePerQuantity
+            } = Rs${item.price}`
+        )
+        .join("\n");
 
-    // --- Send WhatsApp asynchronously ---
-    if (isWhatsapp && customerDetails.tel) {
-      await sendTemplateMessage({
-        to: customerDetails.tel,
-        templateName: "hello_world",
-        text: "Hello! This is a test WhatsApp message.",
-      });
-      await sendDocument({
-        to: customerDetails.tel,
-        filename: `Invoice-${orderId}.pdf`,
-        pdfBuffer,
-        caption: `Your order ${orderId} is confirmed `,
+      const smsMessage =
+        `HELLO ${customerDetails.name.toUpperCase()}, YOUR ORDER ${orderId} IS CONFIRMED ✅ :\n` +
+        `${itemLines}\n` +
+        `VAT: Rs${bills.tax || 0}\n` +
+        `DISCOUNT: Rs${bills.discount || 0}\n` +
+        `TOTAL: Rs${bills.total}`;
+
+      await sendSMS({
+        recipient: customerDetails.tel,
+        message: smsMessage,
       });
     }
 
@@ -150,6 +147,7 @@ async function createOrderHandler(request) {
       orderId: newOrder.orderId,
       pdfBase64,
     });
+
     // // --- Return success response ---
     // return NextResponse.json(
     //   {
